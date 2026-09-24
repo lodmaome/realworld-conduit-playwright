@@ -51,6 +51,12 @@ and fails with the reason if they don't. This replaces the in-container `HEALTHC
 [the compose file](../../docker/docker-compose.yml) can't provide for upstream images we
 don't control.
 
+**Runners are pinned to `ubuntu-24.04`, not `ubuntu-latest`.** GitHub announced (as a
+warning on the first run) that `ubuntu-latest` migrates to Ubuntu 26 on 2026-10-19. The
+tests depend on that image's Docker and on the system libraries `playwright install
+--with-deps` pulls in, so a silent OS change would show up as a red build with no commit
+to blame — the same reasoning as pinning the upstream apps ([0002](0002-pin-upstream-app-versions.md)).
+
 ## Consequences
 
 **Positive**
@@ -69,11 +75,18 @@ don't control.
   reviewed by hand.
 - The `regression` tier names its projects explicitly, so a new functional project must be
   added to that script or it will only run nightly.
-- Each CI run builds both application images from source (a .NET publish and a Bun/Angular
-  build) with no layer cache yet. With a smoke run of about five seconds, those builds are
-  expected to dominate a pull request's wall-clock time — not yet measured in CI.
+- Each CI run builds both application images from source with no layer cache. Measured
+  on the first `main` run (regression tier, 2 workers on a hosted runner): building and
+  starting the images took 52s, installing Chromium 31s, and the 38 tests 23s, for a job
+  of about two minutes. So the tests are the cheap part of any tier; a smoke run is bounded
+  by setup, not by its ten tests. The backend's Dockerfile also runs the backend's own
+  .NET integration tests as part of its build, which is part of that 52s and outside our
+  control.
 - Quarantined tests run only on the nightly, so a quarantined regression can sit unnoticed
   for a day. Making flake rate visible over time is the separate flake-reporting work.
+- The runner pin has to be bumped by hand. GitHub eventually retires old images, so an
+  unattended pin turns into a deprecation failure; the trigger to revisit it is the same
+  announcement that prompted the pin.
 - CI installs Chromium with `playwright install` on the runner rather than running inside
   the Playwright container image. That is fine for functional tests, but the visual suite
   will need baselines produced in one pinned image used both locally and in CI.

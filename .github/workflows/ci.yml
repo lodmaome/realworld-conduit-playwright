@@ -29,7 +29,7 @@ concurrency:
 jobs:
   static:
     name: Types, lint, tags
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -45,7 +45,7 @@ jobs:
 
   test:
     name: Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       TIER: ${{ github.event_name == 'pull_request' && 'smoke' || github.event_name == 'push' && 'regression' || github.event_name == 'workflow_dispatch' && inputs.tier || 'full' }}
