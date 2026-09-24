@@ -17,3 +17,4 @@ place with its status updated.
 | [0004](0004-allure-report-publishing.md)      | Publish Allure reports to GitHub Pages                              | Accepted |
 | [0005](0005-frontend-custom-docker-build.md)  | Custom Dockerfile and build-time API URL patch for the frontend     | Accepted |
 | [0006](0006-backend-database-provider.md)     | Run the backend against its default SQLite provider, not SQL Server | Accepted |
+| [0007](0007-fixture-composed-page-objects.md) | Fixture-composed page objects and locator strategy                  | Accepted |
