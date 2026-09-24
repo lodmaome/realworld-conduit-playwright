@@ -1,0 +1,24 @@
+services:
+  backend:
+    build:
+      context: https://github.com/realworld-apps/aspnetcore-realworld-example-app.git#a397d1197b22edeffa4d2563fa5f4f7f11d0b254
+    ports:
+      - '${BACKEND_PORT:-8080}:8080'
+    # No database env vars: the pinned commit hardcodes SQLite regardless of what its
+    # own docker-compose.yml suggests — see docs/adr/0006-backend-database-provider.md.
+    #
+    # No in-container HEALTHCHECK: we don't control this Dockerfile or its base image,
+    # so we can't assume curl/wget exists inside it. Readiness is polled externally
+    # instead — see tools/ci/wait-for-app.mjs (`npm run wait-for-app`).
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        FRONTEND_REF: dd99ed2cf39c805d719f943c5d7061a5683d98a8
+        API_BASE_URL: ${API_BASE_URL:-http://localhost:8080/api}
+    ports:
+      - '${FRONTEND_PORT:-4200}:80'
+    depends_on:
+      # Order only — the container starting doesn't mean the app inside is ready.
+      - backend
