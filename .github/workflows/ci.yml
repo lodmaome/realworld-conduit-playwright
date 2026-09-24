@@ -1,0 +1,92 @@
+name: CI
+
+# Which tier of tests runs depends on what triggered the run — see
+# docs/adr/0008-test-tiers-and-ci-triggers.md.
+#   pull request      -> smoke       (fast gate, one happy path per feature area)
+#   push to main      -> regression  (all functional tests)
+#   nightly / manual  -> full        (everything, including visual and a11y)
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: Which test tier to run
+        type: choice
+        options: [smoke, regression, full]
+        default: full
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  static:
+    name: Types, lint, tags
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run check:tags
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TIER: ${{ github.event_name == 'pull_request' && 'smoke' || github.event_name == 'push' && 'regression' || github.event_name == 'workflow_dispatch' && inputs.tier || 'full' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start the application
+        run: |
+          cp .env.example .env
+          npm run docker:up
+      - name: Wait for the application
+        run: npm run wait-for-app
+
+      - name: Run ${{ env.TIER }} tests
+        run: npm run "test:${TIER}"
+
+      # Known-flaky tests run on the full tier only, and never fail the build.
+      - name: Run quarantined tests (non-blocking)
+        if: ${{ !cancelled() && env.TIER == 'full' }}
+        continue-on-error: true
+        run: npm run test:quarantine
+
+      - name: Collect application logs
+        if: ${{ failure() }}
+        run: docker compose --env-file .env -f docker/docker-compose.yml logs --no-color > docker-logs.txt
+      - name: Upload reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: reports-${{ env.TIER }}
+          path: |
+            playwright-report/
+            test-results/
+            allure-results/
+            docker-logs.txt
+          retention-days: 14
+          if-no-files-found: ignore

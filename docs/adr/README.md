@@ -18,3 +18,4 @@ place with its status updated.
 | [0005](0005-frontend-custom-docker-build.md)  | Custom Dockerfile and build-time API URL patch for the frontend     | Accepted |
 | [0006](0006-backend-database-provider.md)     | Run the backend against its default SQLite provider, not SQL Server | Accepted |
 | [0007](0007-fixture-composed-page-objects.md) | Fixture-composed page objects and locator strategy                  | Accepted |
+| [0008](0008-test-tiers-and-ci-triggers.md)    | Test tiers and CI triggers                                          | Accepted |
