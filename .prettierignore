@@ -1,0 +1,7 @@
+node_modules
+dist
+playwright-report
+allure-results
+allure-report
+test-results
+api-client/schema.d.ts
