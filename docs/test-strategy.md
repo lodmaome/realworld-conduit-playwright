@@ -122,8 +122,9 @@ Stated plainly, because a strategy that hides its gaps isn't one.
   testing, and placeholder-only form fields pass because axe accepts a placeholder as a name.
 - **The coverage-gap flagger measures reach, not verification.** A test that only sets data up
   through an endpoint counts as reaching it, it sees only what the OpenAPI schema shows (a
-  behaviour change that leaves the contract alone is invisible), and its CI job has not yet run
-  on a real pull request ([0014](adr/0014-pr-coverage-gap-flagger.md)).
+  behaviour change that leaves the contract alone is invisible), and the per-endpoint test counts
+  are approximate for requests a page fires on load; the covered or not status is the part to
+  trust ([0014](adr/0014-pr-coverage-gap-flagger.md)).
 - **The flake budget sees only `main`**, and no real flake has yet occurred to exercise the
   dashboard on live data.
 - **Out of scope for v1**, deliberately: mutation testing, security scanning, performance and load,

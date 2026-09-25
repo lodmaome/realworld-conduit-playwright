@@ -80,6 +80,14 @@ Measured on 2026-09-25 against the running stack:
   schema), the matcher, the differ, the pin reader, the analysis (failed attempts, retries, stubs,
   unmatched requests) and the report.
 
+The CI job was then exercised on a real pull request (a throwaway one, closed unmerged with its
+branch deleted). With a simulated contract change (one new endpoint that no test reaches, one
+altered schema) the job ran the smoke tier, detected the change, re-ran the three suites (81
+passed), and reported "1 added, 7 changed": the new endpoint as reached by no test, the others as
+covered. GitHub recorded one warning annotation on the check, "Endpoint not reached by any test".
+After a second commit reverted the schema, so the pull request no longer changed the contract, the
+same job ran only the 10 smoke tests, skipped both coverage steps, and recorded no annotation.
+
 Two mistakes were found while building it. The differ sorted with `localeCompare`, which depends on
 the machine's locale, so the same report could list its rows in a different order on a laptop and
 in CI; it now compares code units. And a test meant to show removed endpoints used a schema that
@@ -111,9 +119,17 @@ removed none, so it failed for a reason in the test, not the tool.
 - **It costs a recording run** on the pull requests that need it, and adds a fixture to `base.ts`
   that wraps the API request context when recording, a small piece of test infrastructure the
   suite now carries.
-- **Not yet run on a real pull request.** The tool, the recorder, the workflow's syntax and its
-  change-detection command were each verified, but the CI job itself only runs on a pull request
-  and has not been exercised on one.
+- **Per-endpoint test counts are approximate.** For requests the app fires on its own when a page
+  loads, the count of tests that reached them varies from run to run: `GET /api/articles` read 25,
+  28 and 20 across three recordings (twice locally at 10 workers, once on CI), and `GET /api/tags`
+  22 and 28 locally. Worker count was tested and is not the cause. The likely cause, not proven, is
+  a test finishing before a page-load request is observed. Counts for explicit actions were
+  identical every time (`POST /api/users` 33, `GET /api/user` 23), and every endpoint's status
+  (covered or not) was identical in all recordings. So compare statuses, not counts, and know that
+  an endpoint reached by only one test through a page-load request could flicker to "no test
+  reaches it". Today the endpoints reached by a single test (the `PUT` and `DELETE` operations)
+  are all triggered by an explicit action the test then asserts on, and the least-reached
+  page-load endpoint, `GET /api/articles/feed`, has two.
 
 ## Alternatives considered
 
