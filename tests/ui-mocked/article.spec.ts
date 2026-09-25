@@ -2,7 +2,14 @@ import type { Page } from '@playwright/test';
 import { test, expect } from '../fixtures/base';
 import { afterAppHandled, requestEnded } from '../support/app-settled';
 import { apiErrors } from '../support/api-mock';
-import { articles, dragonArticle, dragonComments, signedInUser } from '../support/sample-data';
+import {
+  anna,
+  articles,
+  dragonArticle,
+  dragonComments,
+  signedInUser,
+  testingArticle,
+} from '../support/sample-data';
 
 const commentsUrl = `/articles/${dragonArticle.slug}/comments`;
 const signedIn = {
@@ -209,5 +216,115 @@ test.describe('article page (mocked API)', () => {
 
       expect(await scrollsSideways(page)).toBe(true);
     });
+  });
+});
+
+test.describe('article actions that fail (mocked API)', () => {
+  // KNOWN FRONTEND GAPS, pinned as observed on 2026-09-25. Deleting a comment that fails does
+  // show its error (tested above); the three actions on the article itself do not. A failed
+  // delete leaves the reader on the article with no message, and a failed favorite or follow
+  // leaves the button and count as they were (right) but says nothing (not right). Rewrite
+  // these if the frontend starts reporting them.
+  test('a failed article delete keeps the article and shows no error', async ({
+    page,
+    articlePage,
+    mockApi,
+  }) => {
+    test.info().annotations.push({
+      type: 'known-issue',
+      description: 'A failed article delete is not reported to the author.',
+    });
+    await mockApi({
+      user: signedInUser,
+      articles,
+      overrides: [
+        {
+          method: 'DELETE',
+          path: `/articles/${testingArticle.slug}`,
+          status: 500,
+          body: apiErrors({ server: ['Something went wrong'] }),
+        },
+      ],
+    });
+
+    await articlePage.goto(testingArticle.slug);
+    await expect(articlePage.deleteButton).toBeVisible();
+    const deleteEnded = requestEnded(page, `/api/articles/${testingArticle.slug}`);
+    await articlePage.deleteButton.click();
+    await deleteEnded;
+    await afterAppHandled(page);
+
+    await expect(page).toHaveURL(`/article/${testingArticle.slug}`);
+    await expect(articlePage.title).toHaveText(testingArticle.title);
+    await expect(articlePage.errors).toHaveCount(0);
+  });
+
+  test('a failed favorite leaves the article as it was and shows no error', async ({
+    page,
+    articlePage,
+    mockApi,
+  }) => {
+    test.info().annotations.push({
+      type: 'known-issue',
+      description: 'A failed favorite request is not reported on the article page.',
+    });
+    await mockApi({
+      user: signedInUser,
+      articles,
+      overrides: [
+        {
+          method: 'POST',
+          path: `/articles/${dragonArticle.slug}/favorite`,
+          status: 500,
+          body: apiErrors({ server: ['Something went wrong'] }),
+        },
+      ],
+    });
+
+    await articlePage.goto(dragonArticle.slug);
+    await expect(articlePage.favoriteButton).toBeVisible();
+    const favoriteEnded = requestEnded(page, `/api/articles/${dragonArticle.slug}/favorite`);
+    await articlePage.favoriteButton.click();
+    await favoriteEnded;
+    await afterAppHandled(page);
+
+    await expect(articlePage.favoriteButton).toBeVisible();
+    await expect(articlePage.unfavoriteButton).toHaveCount(0);
+    await expect(articlePage.favoritesCount).toHaveText(`(${dragonArticle.favoritesCount})`);
+    await expect(articlePage.errors).toHaveCount(0);
+  });
+
+  test('a failed follow leaves the author unfollowed and shows no error', async ({
+    page,
+    articlePage,
+    mockApi,
+  }) => {
+    test.info().annotations.push({
+      type: 'known-issue',
+      description: 'A failed follow request is not reported on the article page.',
+    });
+    await mockApi({
+      user: signedInUser,
+      articles,
+      overrides: [
+        {
+          method: 'POST',
+          path: `/profiles/${anna.username}/follow`,
+          status: 500,
+          body: apiErrors({ server: ['Something went wrong'] }),
+        },
+      ],
+    });
+
+    await articlePage.goto(dragonArticle.slug);
+    await expect(articlePage.followButton(anna.username)).toBeVisible();
+    const followEnded = requestEnded(page, `/api/profiles/${anna.username}/follow`);
+    await articlePage.followButton(anna.username).click();
+    await followEnded;
+    await afterAppHandled(page);
+
+    await expect(articlePage.followButton(anna.username)).toBeVisible();
+    await expect(articlePage.unfollowButton(anna.username)).toHaveCount(0);
+    await expect(articlePage.errors).toHaveCount(0);
   });
 });

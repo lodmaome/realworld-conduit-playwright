@@ -26,6 +26,10 @@ Call `mockApi({ ... })` before the first navigation. Fixed data comes from
   no mouse can, and the buttons disable themselves after that task, so it reports a defect that a
   person can't trigger (measured, see ADR-0013). Click, wait for the button to be disabled, try
   again.
+- **"Is there an error / an active tab?"**: count elements, don't read their text. Several
+  containers are always in the markup, empty or hidden (the `.error-messages` lists, the hidden
+  tag tab that also carries `active`), so `allInnerTexts()` shows a blank entry that looks like
+  "nothing". Page objects target the individual messages and the visible tab; see ADR-0013.
 - **Lists of articles**: `articleSeries(n)` in `sample-data.ts` gives `n` distinct articles for
   pagination.
 

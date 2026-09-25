@@ -1,7 +1,13 @@
 import { test, expect } from '../fixtures/base';
-import { afterAppHandled, requestEnded } from '../support/app-settled';
+import { afterAppHandled, recordRequests, requestEnded } from '../support/app-settled';
 import { apiErrors, type ApiOverride } from '../support/api-mock';
-import { anna, articles, signedInUser } from '../support/sample-data';
+import {
+  anna,
+  articles,
+  dragonArticle,
+  signedInUser,
+  testingArticle,
+} from '../support/sample-data';
 
 test.describe('profile (mocked API)', () => {
   test('a user with no articles shows the empty message', async ({ profilePage, mockApi }) => {
@@ -89,6 +95,94 @@ test.describe('profile (mocked API)', () => {
 
     await expect(profilePage.followButton(anna.username)).toBeVisible();
     await expect(profilePage.unfollowButton(anna.username)).toHaveCount(0);
+    await expect(profilePage.errors).toHaveCount(0);
+  });
+});
+
+test.describe('favorited posts tab (mocked API)', () => {
+  // The stub layer doesn't filter by `favorited`, so the tab's list comes from an override.
+  const favoritedBy = (shown: typeof articles): ApiOverride => ({
+    path: '/articles',
+    query: { favorited: anna.username },
+    status: 200,
+    body: { articles: shown, articlesCount: shown.length },
+  });
+
+  test("asks for the user's favorites and shows them instead of their own posts", async ({
+    page,
+    profilePage,
+    mockApi,
+  }) => {
+    await mockApi({
+      user: signedInUser,
+      articles,
+      profiles: [anna],
+      overrides: [favoritedBy([testingArticle])],
+    });
+    const listRequests = recordRequests(page, 'GET', '/api/articles');
+
+    await profilePage.goto(anna.username);
+    await expect(profilePage.articles.preview(dragonArticle.title)).toBeVisible();
+    await profilePage.favoritedPostsTab.click();
+
+    await expect(page).toHaveURL(`/profile/${anna.username}/favorites`);
+    await expect(profilePage.articles.preview(testingArticle.title)).toBeVisible();
+    await expect(profilePage.articles.preview(dragonArticle.title)).toHaveCount(0);
+    const filters = listRequests.map((url) => new URL(url).searchParams);
+    expect(filters.some((query) => query.get('favorited') === anna.username)).toBe(true);
+  });
+
+  test('shows the empty message when the user has favorited nothing', async ({
+    profilePage,
+    mockApi,
+  }) => {
+    await mockApi({
+      user: signedInUser,
+      articles,
+      profiles: [anna],
+      overrides: [favoritedBy([])],
+    });
+
+    await profilePage.gotoFavorites(anna.username);
+
+    await expect(profilePage.articles.emptyMessage).toContainText('No articles are here');
+    await expect(profilePage.articles.previews).toHaveCount(0);
+  });
+
+  // KNOWN FRONTEND GAP, pinned as observed on 2026-09-25: as elsewhere, a failed list
+  // request leaves "Loading articles..." for good, with no error. Rewrite this if the
+  // frontend gains an error state.
+  test('a failed favorites request leaves the loading message and no error', async ({
+    page,
+    profilePage,
+    mockApi,
+  }) => {
+    test.info().annotations.push({
+      type: 'known-issue',
+      description:
+        "A failed request for a user's favorites leaves the list on the loading message.",
+    });
+    await mockApi({
+      user: signedInUser,
+      articles,
+      profiles: [anna],
+      overrides: [
+        {
+          path: '/articles',
+          query: { favorited: anna.username },
+          status: 500,
+          body: apiErrors({ server: ['Something went wrong'] }),
+        },
+      ],
+    });
+
+    const listEnded = requestEnded(page, '/api/articles');
+    await profilePage.gotoFavorites(anna.username);
+    await listEnded;
+    await afterAppHandled(page);
+
+    await expect(profilePage.articles.loadingMessage).toBeVisible();
+    await expect(profilePage.articles.previews).toHaveCount(0);
     await expect(profilePage.errors).toHaveCount(0);
   });
 });

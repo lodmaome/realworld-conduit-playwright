@@ -1,7 +1,14 @@
 import { test, expect } from '../fixtures/base';
 import { afterAppHandled, requestEnded } from '../support/app-settled';
 import { apiErrors, deferred, type ApiOverride } from '../support/api-mock';
-import { articles, articleSeries, dragonArticle, signedInUser, tags } from '../support/sample-data';
+import {
+  articles,
+  articleSeries,
+  dragonArticle,
+  signedInUser,
+  tags,
+  testingArticle,
+} from '../support/sample-data';
 
 test.describe('home feed (mocked API)', () => {
   test('shows the loading message until the feed responds, then the articles', async ({
@@ -224,5 +231,128 @@ test.describe('favoriting from the feed (mocked API)', () => {
     await expect(favorite).toHaveText(String(dragonArticle.favoritesCount));
     await expect(favorite).toHaveClass(/btn-outline-primary/);
     await expect(page.locator('.error-messages li')).toHaveCount(0);
+  });
+});
+
+test.describe('popular tags (mocked API)', () => {
+  test('shows the empty message when there are no tags', async ({ homePage, mockApi }) => {
+    await mockApi({ articles, tags: [] });
+
+    await homePage.goto();
+
+    await expect(homePage.noTagsMessage).toBeVisible();
+    await expect(homePage.popularTags.getByRole('link')).toHaveCount(0);
+    await expect(homePage.articles.previews).toHaveCount(articles.length);
+  });
+
+  // KNOWN FRONTEND GAP, pinned as observed on 2026-09-25: when the tags request fails, the
+  // sidebar says "Loading tags..." for good, though loading has finished. The feed beside it
+  // is unaffected. Rewrite this if the frontend gains an error state for the tag list.
+  test('a failed tags request leaves "Loading tags..." and the feed still works', async ({
+    page,
+    homePage,
+    mockApi,
+  }) => {
+    test.info().annotations.push({
+      type: 'known-issue',
+      description: 'A failed tags request leaves the sidebar saying it is still loading.',
+    });
+    await mockApi({
+      articles,
+      overrides: [
+        { path: '/tags', status: 500, body: apiErrors({ server: ['Something went wrong'] }) },
+      ],
+    });
+
+    const tagsEnded = requestEnded(page, '/api/tags');
+    await homePage.goto();
+    await tagsEnded;
+    await afterAppHandled(page);
+
+    await expect(homePage.tagsLoadingMessage).toBeVisible();
+    await expect(homePage.popularTags.getByRole('link')).toHaveCount(0);
+    await expect(homePage.articles.previews).toHaveCount(articles.length);
+    await expect(page.locator('.error-messages li')).toHaveCount(0);
+  });
+});
+
+test.describe('your feed (mocked API)', () => {
+  test('shows the loading message until the feed responds, then its articles', async ({
+    homePage,
+    mockApi,
+  }) => {
+    const feedResponse = deferred();
+    await mockApi({
+      user: signedInUser,
+      articles,
+      tags,
+      overrides: [
+        {
+          path: '/articles/feed',
+          status: 200,
+          body: { articles: [testingArticle], articlesCount: 1 },
+          until: feedResponse.promise,
+        },
+      ],
+    });
+
+    await homePage.goto();
+    await homePage.yourFeedTab.click();
+
+    await expect(homePage.activeFeedTab).toHaveText('Your Feed');
+    await expect(homePage.articles.loadingMessage).toBeVisible();
+    await expect(homePage.articles.previews).toHaveCount(0);
+
+    feedResponse.release();
+
+    await expect(homePage.articles.previews).toHaveCount(1);
+    await expect(homePage.articles.preview(testingArticle.title)).toBeVisible();
+  });
+
+  const yourFeedFails: ApiOverride = {
+    path: '/articles/feed',
+    status: 500,
+    body: apiErrors({ server: ['Something went wrong'] }),
+  };
+
+  // KNOWN FRONTEND GAP, pinned as observed on 2026-09-25: as with the global feed, a failed
+  // Your Feed request leaves "Loading articles..." for good, with no error. Rewrite this if
+  // the frontend gains an error state for the feed.
+  test('a failed Your Feed leaves the loading message and no error', async ({
+    page,
+    homePage,
+    mockApi,
+  }) => {
+    test.info().annotations.push({
+      type: 'known-issue',
+      description: 'A failed Your Feed request leaves the feed on the loading message.',
+    });
+    await mockApi({ user: signedInUser, articles, tags, overrides: [yourFeedFails] });
+
+    await homePage.goto();
+    await expect(homePage.articles.previews).toHaveCount(articles.length);
+    const feedEnded = requestEnded(page, '/api/articles/feed');
+    await homePage.yourFeedTab.click();
+    await feedEnded;
+    await afterAppHandled(page);
+
+    await expect(homePage.articles.loadingMessage).toBeVisible();
+    await expect(homePage.articles.previews).toHaveCount(0);
+    await expect(page.locator('.error-messages li')).toHaveCount(0);
+  });
+
+  test('after a failed Your Feed, the Global Feed tab still works', async ({
+    homePage,
+    mockApi,
+  }) => {
+    await mockApi({ user: signedInUser, articles, tags, overrides: [yourFeedFails] });
+
+    await homePage.goto();
+    await homePage.yourFeedTab.click();
+    await expect(homePage.articles.loadingMessage).toBeVisible();
+    await homePage.globalFeedTab.click();
+
+    await expect(homePage.activeFeedTab).toHaveText('Global Feed');
+    await expect(homePage.articles.previews).toHaveCount(articles.length);
   });
 });
