@@ -21,6 +21,9 @@ Publish the Allure report as a live static site via GitHub Pages after each CI r
 the default branch, in addition to (not instead of) keeping raw results as a CI
 artifact for debugging a specific run.
 
+How this was built, and what building it revealed (Allure 3, where history is stored, the
+analytics the report embeds), is in [0011](0011-allure-report-publishing.md).
+
 ## Consequences
 
 **Positive**

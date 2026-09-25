@@ -21,3 +21,4 @@ place with its status updated.
 | [0008](0008-test-tiers-and-ci-triggers.md)               | Test tiers and CI triggers                                          | Accepted |
 | [0009](0009-visual-regression-in-a-pinned-image.md)      | Visual regression in a pinned image, on stubbed data                | Accepted |
 | [0010](0010-a11y-as-a-ratchet-on-recorded-violations.md) | Accessibility as a ratchet on recorded violations                   | Accepted |
+| [0011](0011-allure-report-publishing.md)                 | Publishing the Allure report: Allure 3, history in a branch         | Accepted |

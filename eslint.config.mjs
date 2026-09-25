@@ -34,7 +34,7 @@ export default tseslint.config(
   },
   {
     // Plain Node scripts, not covered by the TypeScript config's implicit globals.
-    files: ['tools/**/*.mjs'],
+    files: ['tools/**/*.mjs', 'allurerc.mjs'],
     languageOptions: {
       globals: {
         process: 'readonly',

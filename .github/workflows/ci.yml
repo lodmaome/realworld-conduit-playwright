@@ -50,7 +50,13 @@ jobs:
     timeout-minutes: 30
     env:
       TIER: ${{ github.event_name == 'pull_request' && 'smoke' || github.event_name == 'push' && 'regression' || github.event_name == 'workflow_dispatch' && inputs.tier || 'full' }}
+    outputs:
+      tier: ${{ steps.tier.outputs.tier }}
     steps:
+      # The report job needs to know which tier ran, to name the report.
+      - name: Record the tier
+        id: tier
+        run: echo "tier=$TIER" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
@@ -93,7 +99,54 @@ jobs:
           path: |
             playwright-report/
             test-results/
-            allure-results/
             docker-logs.txt
           retention-days: 14
           if-no-files-found: ignore
+      # Its own single-path artifact: with several paths, upload-artifact roots the archive at
+      # their common ancestor, so the layout would depend on which of them happened to exist.
+      - name: Upload Allure results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: allure-results
+          path: allure-results/
+          retention-days: 1
+          if-no-files-found: warn
+
+  report:
+    name: Publish Allure report
+    needs: test
+    # A red run is the one most worth reading, so this runs after failures too — but never for
+    # a pull request (its results shouldn't enter the trend) and not for a cancelled run.
+    if: ${{ !cancelled() && github.event_name != 'pull_request' && needs.test.result != 'skipped' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    # Publishing reads the history from the branch and writes it back, so two runs must not
+    # overlap; queue them rather than cancelling one.
+    concurrency:
+      group: allure-publish
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Download Allure results
+        id: results
+        # If the test job died before uploading, there is nothing to publish; that failure is
+        # already reported by the test job, so don't add a second red X for it.
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: allure-results
+          path: allure-results
+      - name: Publish the report
+        if: ${{ steps.results.outcome == 'success' }}
+        env:
+          PUBLISH_REMOTE: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          ALLURE_REPORT_NAME: RealWorld Conduit · ${{ needs.test.outputs.tier }} · run #${{ github.run_number }}
+        run: node tools/ci/publish-allure-report.mjs

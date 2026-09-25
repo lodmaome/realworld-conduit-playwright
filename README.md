@@ -4,7 +4,7 @@ A Playwright + TypeScript test automation portfolio against the RealWorld
 ("Conduit" Medium-clone spec) app, self-hosted via Docker Compose so CI fully
 controls the test environment.
 
-**Status: fixtures, page objects, and functional, visual-regression and accessibility suites are in place**, with tiered CI running on GitHub Actions (58 tests). Still to come: the published Allure report, flake handling (retry-with-reporting and quarantine) and the PR coverage-gap tool. See the architecture decisions in [docs/adr/](docs/adr/README.md) before adding anything that would contradict them.
+**Status: fixtures, page objects, and functional, visual-regression and accessibility suites are in place**, with tiered CI running on GitHub Actions (58 tests). Still to come: flake handling (retry-with-reporting and quarantine) and the PR coverage-gap tool. See the architecture decisions in [docs/adr/](docs/adr/README.md) before adding anything that would contradict them.
 
 ## Target application
 
@@ -57,6 +57,20 @@ Tests are selected by tier, and CI picks the tier from what triggered the run
 
 `npm run check:tags` fails on any tag outside that vocabulary, so a typo can't quietly
 drop a test out of the smoke run.
+
+## Reports
+
+CI publishes an Allure report with trend history to GitHub Pages after each run on `main`
+([ADR-0011](docs/adr/0011-allure-report-publishing.md)). To build one locally:
+
+```bash
+npm run clean:results     # results append across runs; start clean
+npm run test:smoke        # or any tier
+npm run allure:generate
+npm run allure:open
+```
+
+Local reports carry no history; only the CI publish step records it.
 
 ## Project structure
 
