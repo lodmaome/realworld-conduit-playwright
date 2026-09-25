@@ -44,6 +44,7 @@ export const dragonArticle = {
   updatedAt: '2026-01-15T10:00:00.000Z',
   favorited: false,
   favoritesCount: 12,
+  comments: [],
   author: anna,
 } satisfies StubArticle;
 
@@ -57,6 +58,7 @@ export const testingArticle = {
   updatedAt: '2026-02-03T08:30:00.000Z',
   favorited: true,
   favoritesCount: 3,
+  comments: [],
   author: jake,
 } satisfies StubArticle;
 
@@ -71,6 +73,7 @@ export const longTitleArticle = {
   updatedAt: '2026-03-21T17:45:00.000Z',
   favorited: false,
   favoritesCount: 0,
+  comments: [],
   author: anna,
 } satisfies StubArticle;
 
@@ -103,6 +106,7 @@ export function articleSeries(count: number): StubArticle[] {
     title: `Series article ${index + 1}`,
     tagList: [],
     favoritesCount: 0,
+    comments: [],
     author: anna,
   }));
 }

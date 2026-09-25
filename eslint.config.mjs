@@ -30,6 +30,9 @@ export default tseslint.config(
       // fixing it.
       'playwright/no-force-option': 'error',
       'playwright/no-nth-methods': 'error',
+      // `expectContract` (tests/support/contract.ts) wraps an `expect`, so a test whose only
+      // assertion is a contract check is still asserting.
+      'playwright/expect-expect': ['warn', { assertFunctionNames: ['expect', 'expectContract'] }],
     },
   },
   {

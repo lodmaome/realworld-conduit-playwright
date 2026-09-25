@@ -101,11 +101,16 @@ function pageOf(articles: StubArticle[], url: URL): Stubbed {
   return ok({ articles: matching.slice(offset, offset + limit), articlesCount: matching.length });
 }
 
-function stubFor(config: ApiMockConfig, url: URL): Stubbed | undefined {
+export function stubFor(config: ApiMockConfig, url: URL): Stubbed | undefined {
   const path = url.pathname.replace(/^\/api/, '');
   const articles = config.articles ?? [];
 
-  if (path === '/user') return config.user ? ok({ user: config.user }) : { status: 401, body: {} };
+  // The body the real API sends (checked by tests/api/stubs-match-contract.spec.ts).
+  if (path === '/user') {
+    return config.user
+      ? ok({ user: config.user })
+      : { status: 401, body: { errors: { token: ['is missing'] } } };
+  }
   if (path === '/tags') return ok({ tags: config.tags ?? [] });
   if (path === '/articles/feed') return pageOf(config.feed ?? [], url);
   if (path === '/articles') return pageOf(articles, url);

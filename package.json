@@ -35,7 +35,7 @@
     "coverage-gap": "node tools/coverage-gap/cli.mjs",
     "test:tools": "node --test \"tools/**/*.test.mjs\"",
     "wait-for-app": "node tools/ci/wait-for-app.mjs",
-    "generate:api-types": "openapi-typescript http://localhost:8080/swagger/v1/swagger.json -o api-client/schema.d.ts",
+    "generate:api-types": "node tools/ci/generate-api-types.mjs",
     "docker:up": "docker compose --env-file ./.env -f docker/docker-compose.yml up -d --build",
     "docker:down": "docker compose --env-file ./.env -f docker/docker-compose.yml down",
     "docker:logs": "docker compose --env-file ./.env -f docker/docker-compose.yml logs -f"
@@ -46,6 +46,7 @@
     "@faker-js/faker": "10.6.0",
     "@playwright/test": "1.63.0",
     "@types/node": "26.6.1",
+    "ajv": "8.20.0",
     "allure": "3.18.0",
     "allure-playwright": "3.12.2",
     "eslint": "10.11.0",

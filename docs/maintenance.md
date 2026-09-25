@@ -53,10 +53,16 @@ A bump is deliberate, and the checks depend on which side moved.
 
 3. **Backend:** re-read `src/Conduit/Program.cs` for the database wiring. If upstream has
    re-enabled the environment-variable provider switch, [ADR-0006](adr/0006-backend-database-provider.md)
-   needs revisiting. Then `npm run generate:api-types` and review the diff of `schema.d.ts`: a
-   contract change is meant to show up there. **Don't skip the regeneration**: the coverage-gap
-   flagger can only see a changed endpoint through that file, and warns on a pull request that
-   moves the backend pin without touching it.
+   needs revisiting. Then `npm run generate:api-types`, which rewrites both `api-client/openapi.json`
+   and `schema.d.ts`; review the diff of both: a contract change is meant to show up there.
+   **Don't skip the regeneration**: the coverage-gap flagger can only see a changed endpoint through
+   `schema.d.ts`, and warns on a pull request that moves the backend pin without touching it. The API
+   suite validates real responses against `openapi.json` with strict schemas, so a field the backend
+   added or retyped fails a named test; that is the contract change surfacing, so update the test or
+   the supplement in `api-client/contract.ts`. If `tests/api/spec-gaps.spec.ts` fails, the published
+   spec got better: delete the supplement it names
+   ([ADR-0015](adr/0015-validate-responses-against-the-contract.md)). A pinned backend defect
+   (`known-issue`) that starts failing means it was fixed: rewrite the test to assert the fix.
    After `npm run coverage:record`, `npm run coverage-gap -- --base origin/main` lists the added or
    changed endpoints no test reaches ([ADR-0014](adr/0014-pr-coverage-gap-flagger.md)); CI does the
    same on the pull request.

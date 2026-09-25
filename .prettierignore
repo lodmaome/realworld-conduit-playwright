@@ -5,3 +5,4 @@ allure-results
 allure-report
 test-results
 api-client/schema.d.ts
+api-client/openapi.json

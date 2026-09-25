@@ -48,12 +48,49 @@ async function expectOk(res: APIResponse, action: string): Promise<void> {
 
 const authHeader = (token: string) => ({ Authorization: `Token ${token}` });
 
+/** What the API answered, without judging it: the API suite asserts on errors as well as successes. */
+export type ApiResult<Body = unknown> = { status: number; body: Body };
+
+export type SendOptions = {
+  /** Sent as `Authorization: Token <token>`. */
+  token?: string;
+  /** Sent as the whole Authorization header, to test other schemes and malformed values. */
+  authorization?: string;
+  data?: unknown;
+  params?: Record<string, string | number>;
+};
+
 export function createApiClient(request: APIRequestContext) {
   // No leading slash on any path below: the request context's baseURL includes the
   // /api prefix (see tests/fixtures/base.ts), and WHATWG URL joining treats a
   // leading-slash path as absolute, silently discarding that prefix. Verified via
   // `new URL('/users', 'http://host/api')` -> http://host/users, not .../api/users.
   return {
+    /**
+     * Any call, returning the status and parsed body whatever they are. The typed methods below
+     * throw on a non-2xx, which is right for set-up and wrong for a test of an error response.
+     * `path` follows the same no-leading-slash rule as everything here.
+     */
+    async send(
+      method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+      path: string,
+      { token, authorization, data, params }: SendOptions = {},
+    ): Promise<ApiResult> {
+      const headers: Record<string, string> = {};
+      if (authorization !== undefined) headers.Authorization = authorization;
+      else if (token !== undefined) Object.assign(headers, authHeader(token));
+
+      const res = await request.fetch(path, { method, headers, data, params });
+      const text = await res.text();
+      let body: unknown = text === '' ? undefined : text;
+      try {
+        if (text !== '') body = JSON.parse(text);
+      } catch {
+        // Not JSON: keep the text, so a test can see what it got.
+      }
+      return { status: res.status(), body };
+    },
+
     async register(input: RegisterInput): Promise<User> {
       const res = await request.post('users', { data: { user: input } });
       await expectOk(res, 'register');
