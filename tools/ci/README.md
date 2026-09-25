@@ -11,4 +11,12 @@ Small, dependency-free Node scripts the CI workflow (and developers) call throug
   control the upstream images and can't add a compose `HEALTHCHECK` to them.
   `WAIT_TIMEOUT_MS`, `API_BASE_URL` and `FRONTEND_BASE_URL` override the defaults.
 
-See [ADR-0008](../../docs/adr/0008-test-tiers-and-ci-triggers.md).
+- `run-all.mjs` — runs several npm scripts in order and keeps going after a failure, exiting
+  non-zero if any failed. `test:full` uses it so a functional failure can't hide a visual one
+  (`&&` stops at the first failure; `;` isn't portable to cmd.exe).
+- `check-playwright-image.mjs` (`npm run check:playwright-image`) — fails if the Playwright
+  version in `package.json` and the tag of the visual suite's Docker image differ; a mismatch
+  doesn't fail loudly, it renders differently.
+
+See [ADR-0008](../../docs/adr/0008-test-tiers-and-ci-triggers.md) and
+[ADR-0009](../../docs/adr/0009-visual-regression-in-a-pinned-image.md).

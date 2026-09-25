@@ -2,6 +2,14 @@ import { defineConfig, devices } from '@playwright/test';
 
 const isCI = !!process.env.CI;
 
+// Visual and a11y run against fixed stub data, so the browser environment must be as fixed
+// as the data: a screenshot of a date rendered in the runner's timezone would differ per host.
+const deterministicBrowser = {
+  locale: 'en-US',
+  timezoneId: 'UTC',
+  colorScheme: 'light',
+} as const;
+
 const FRONTEND_BASE_URL = process.env.FRONTEND_BASE_URL ?? 'http://localhost:4200';
 const API_BASE_URL = process.env.API_BASE_URL ?? 'http://localhost:8080/api';
 
@@ -58,12 +66,15 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         baseURL: FRONTEND_BASE_URL,
+        ...deterministicBrowser,
         viewport: { width: 1280, height: 720 },
         reducedMotion: 'reduce',
       },
       expect: {
+        // No pixel tolerance: the pinned image and fixed stub data make renders identical, so
+        // any difference is a real change. (Playwright still applies its default per-pixel
+        // colour threshold.)
         toHaveScreenshot: {
-          maxDiffPixelRatio: 0.01,
           animations: 'disabled',
         },
       },
@@ -71,8 +82,11 @@ export default defineConfig({
     {
       name: 'a11y',
       testDir: './tests/a11y',
+      // Violation records are text, identical on every OS — no per-platform suffix.
+      snapshotPathTemplate: '{testDir}/known-violations/{arg}{ext}',
       use: {
         ...devices['Desktop Chrome'],
+        ...deterministicBrowser,
         baseURL: FRONTEND_BASE_URL,
       },
     },

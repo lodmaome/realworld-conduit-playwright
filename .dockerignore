@@ -1,0 +1,6 @@
+# The Playwright runner image only needs the dependency manifests; everything else is
+# bind-mounted at run time. An allowlist keeps the build context tiny and stops
+# node_modules, test results and .env from ever being sent to the daemon.
+*
+!package.json
+!package-lock.json

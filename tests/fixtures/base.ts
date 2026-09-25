@@ -2,6 +2,7 @@ import { test as base, expect, type Page } from '@playwright/test';
 import { createApiClient, type ApiClient, type Article } from '@api-client/client';
 import { createArticle, type NewArticleOverrides } from '@factories/article-factory';
 import { createUser, type CreatedUser, type NewUserOverrides } from '@factories/user-factory';
+import { installApiMock, type ApiMockConfig } from '../support/api-mock';
 import { Header } from '@pages/components/header';
 import { ArticlePage } from '@pages/article-page';
 import { EditorPage } from '@pages/editor-page';
@@ -18,13 +19,7 @@ const API_BASE_URL = `${process.env.API_BASE_URL ?? 'http://localhost:8080/api'}
   '/',
 );
 
-type Fixtures = {
-  apiClient: ApiClient;
-  userFactory: (overrides?: NewUserOverrides) => Promise<CreatedUser>;
-  articleFactory: (author: CreatedUser, overrides?: NewArticleOverrides) => Promise<Article>;
-  authenticatedUser: CreatedUser;
-  authenticatedPage: Page;
-
+type PageObjectFixtures = {
   header: Header;
   loginPage: LoginPage;
   registerPage: RegisterPage;
@@ -33,6 +28,19 @@ type Fixtures = {
   articlePage: ArticlePage;
   profilePage: ProfilePage;
   settingsPage: SettingsPage;
+};
+
+/** The page objects, as a bag — for code (like the shared scenes) that drives several pages. */
+export type PageObjects = PageObjectFixtures;
+
+type Fixtures = PageObjectFixtures & {
+  pages: PageObjects;
+  mockApi: (config?: ApiMockConfig) => Promise<void>;
+  apiClient: ApiClient;
+  userFactory: (overrides?: NewUserOverrides) => Promise<CreatedUser>;
+  articleFactory: (author: CreatedUser, overrides?: NewArticleOverrides) => Promise<Article>;
+  authenticatedUser: CreatedUser;
+  authenticatedPage: Page;
 };
 
 export const test = base.extend<Fixtures>({
@@ -79,6 +87,19 @@ export const test = base.extend<Fixtures>({
     await use(page);
   },
 
+  // Answers the API from fixed stubs and blocks external assets (see support/api-mock.ts).
+  // Call it before the first navigation. An API call nothing stubbed fails the test at
+  // teardown, so a missing stub is loud instead of a silently blank or half-loaded page.
+  mockApi: async ({ page, baseURL }, use) => {
+    if (!baseURL)
+      throw new Error('mockApi needs a baseURL to tell app requests from external ones');
+    let mock: Awaited<ReturnType<typeof installApiMock>> | undefined;
+    await use(async (config = {}) => {
+      mock = await installApiMock(page, baseURL, config);
+    });
+    expect(mock?.unmatched ?? [], 'API requests with no stub').toEqual([]);
+  },
+
   header: async ({ page }, use) => {
     await use(new Header(page));
   },
@@ -102,6 +123,33 @@ export const test = base.extend<Fixtures>({
   },
   settingsPage: async ({ page }, use) => {
     await use(new SettingsPage(page));
+  },
+
+  // Playwright can't rest-destructure fixtures, so code that drives several pages (the
+  // shared scenes) takes them as one bag.
+  pages: async (
+    {
+      header,
+      loginPage,
+      registerPage,
+      homePage,
+      editorPage,
+      articlePage,
+      profilePage,
+      settingsPage,
+    },
+    use,
+  ) => {
+    await use({
+      header,
+      loginPage,
+      registerPage,
+      homePage,
+      editorPage,
+      articlePage,
+      profilePage,
+      settingsPage,
+    });
   },
 });
 

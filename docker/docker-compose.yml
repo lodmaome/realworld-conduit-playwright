@@ -22,3 +22,33 @@ services:
     depends_on:
       # Order only — the container starting doesn't mean the app inside is ready.
       - backend
+
+  # The pinned image the visual suite runs in (docs/adr/0009). Not part of `docker:up`:
+  # it's a one-shot runner, started with `npm run test:visual`.
+  playwright:
+    profiles: ['tests']
+    build:
+      context: ..
+      dockerfile: docker/playwright/Dockerfile
+    init: true
+    # Chromium needs more shared memory than Docker's 64MB default allows.
+    ipc: host
+    environment:
+      # On the compose network the frontend is reachable by service name. The visual suite
+      # stubs the API, so it needs no backend URL.
+      FRONTEND_BASE_URL: http://frontend
+      CI: ${CI:-}
+    volumes:
+      # Sources are mounted rather than baked in, so a spec edit doesn't rebuild the image.
+      - ../tests:/work/tests
+      - ../pages:/work/pages
+      - ../factories:/work/factories
+      - ../api-client:/work/api-client
+      - ../playwright.config.ts:/work/playwright.config.ts:ro
+      - ../tsconfig.json:/work/tsconfig.json:ro
+      # Results and reports land on the host, where CI uploads them from.
+      - ../test-results:/work/test-results
+      - ../playwright-report:/work/playwright-report
+      - ../allure-results:/work/allure-results
+    depends_on:
+      - frontend
