@@ -66,11 +66,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/articles/{slug}/related": {
-        parameters: { query?: never; header?: never; path?: never; cookie?: never; };
-        get: { parameters: { query?: never; header?: never; path: { slug: string; }; cookie?: never; }; requestBody?: never; responses: { 200: { headers: { [name: string]: unknown; }; content: { "application/json": components["schemas"]["Conduit.Features.Articles.ArticlesEnvelope"]; }; }; }; };
-        put?: never; post?: never; delete?: never; options?: never; head?: never; patch?: never; trace?: never;
-    };
     "/api/articles/{slug}/comments": {
         parameters: {
             query?: never;
@@ -672,7 +667,6 @@ export interface components {
             updatedAt?: string;
         };
         "Conduit.Domain.Comment": {
-            edited?: boolean;
             /** Format: int32 */
             id?: number;
             body?: string | null;
