@@ -148,5 +148,6 @@ jobs:
         if: ${{ steps.results.outcome == 'success' }}
         env:
           PUBLISH_REMOTE: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-          ALLURE_REPORT_NAME: RealWorld Conduit · ${{ needs.test.outputs.tier }} · run #${{ github.run_number }}
+          # Quoted: unquoted, YAML reads " #" as the start of a comment and drops the run number.
+          ALLURE_REPORT_NAME: 'RealWorld Conduit · ${{ needs.test.outputs.tier }} · run #${{ github.run_number }}'
         run: node tools/ci/publish-allure-report.mjs
