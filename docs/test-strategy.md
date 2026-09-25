@@ -28,7 +28,7 @@ everything else:
 | `ui`        | User journeys end to end: auth, articles, comments, favorites, feed and pagination, profile and follow, settings | Real backend, set up through the API | Runner                  | 37    |
 | `visual`    | The pages look the same: a screenshot per scene at zero pixel tolerance                                          | Fixed stubs                          | Pinned Playwright image | 10    |
 | `a11y`      | No new accessibility violations (axe, WCAG 2.0/2.1 A and AA), and none silently fixed                            | Fixed stubs                          | Runner                  | 10    |
-| `ui-mocked` | UI behaviour the real backend can't easily produce (errors, edge payloads)                                       | Route interception                   | Runner                  | 13    |
+| `ui-mocked` | UI behaviour the real backend can't easily produce (errors, edge payloads)                                       | Route interception                   | Runner                  | 29    |
 
 The visual and a11y suites share one list of ten "scenes" (a page in a state), so they can't drift
 apart on coverage. Both render from stubs typed from the OpenAPI schema, with external fonts and
@@ -89,14 +89,23 @@ Stated plainly, because a strategy that hides its gaps isn't one.
   assume, beyond types generated from its spec.
 - **Screenshots aren't production-faithful.** With the external stylesheets blocked, text is the
   image's fallback fonts and icon glyphs are absent, so an icon-font regression isn't caught.
-- **`ui-mocked` covers three areas, not the whole app.** The home feed, the article page (loading,
-  empty and failed requests, rejected and failed comments, hostile and very long content), and
-  sign-in and session failures. The editor, settings, profile, favorite/follow and pagination
-  failures are not covered. Five of its tests pin frontend behaviour that a user would call a
-  defect (no error state for a failed feed, an unknown article or failed comments, and a long
-  unbroken word widening the page), asserted as observed and labelled `known-issue`. Four of those
-  assert that something did not happen, and the app gives no signal to wait on, so they narrow that
-  window rather than close it ([0013](adr/0013-api-overrides-for-the-mocked-ui-project.md)).
+- **`ui-mocked` covers the main failure paths, not every one.** Covered: the home feed (loading,
+  empty, failed, pagination boundaries and page changes, a failed favorite), the article page
+  (failed and rejected comments, a missing article, hostile and very long content), sign-in and
+  session failures, the editor and settings (server errors, the in-flight guard), and the profile
+  (empty, unloadable, a failed follow). Not covered: registration, a failing popular-tags list,
+  "Your Feed" failures, failed article delete or favorite on the article page, and the profile's
+  Favorited Posts tab.
+- **Eleven of its tests pin frontend behaviour a user would call a defect**, asserted as observed
+  and labelled `known-issue`: no error state for a failed feed, page change, unknown article,
+  failed comments or unloadable profile; a blank editor for an unknown article; a failed follow or
+  favorite that tells the user nothing; and a long unbroken word widening the page. Ten of the
+  eleven assert that something did not happen, and the app gives no signal to wait on, so they
+  narrow that window rather than close it
+  ([0013](adr/0013-api-overrides-for-the-mocked-ui-project.md)).
+- **One real-backend test overpromises.** `tests/ui/profile.spec.ts` ("a profile that does not
+  exist shows an error") only asserts the username is hidden; the app shows no error. Noted, not
+  changed.
 - **Accessibility is the machine-checkable subset.** No keyboard, focus-order or screen-reader
   testing, and placeholder-only form fields pass because axe accepts a placeholder as a name.
 - **The flake budget sees only `main`**, and no real flake has yet occurred to exercise the

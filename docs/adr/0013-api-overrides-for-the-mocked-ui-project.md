@@ -50,6 +50,17 @@ frontend gains an error state. Observed on 2026-09-25:
   widens the page: 400 characters gave a 5826px-wide page against 1280px. The same 400 characters
   split by spaces, and ordinary long text, did not (isolated one variable at a time, with a
   control, rather than assumed from a payload that changed several things at once).
+- A profile that can't be loaded, whether missing (`404`) or failing (`500`), renders a blank page:
+  no user, no articles, no message. The real-backend test of a missing profile
+  (`tests/ui/profile.spec.ts`) is titled "shows an error" but asserts only that the username is
+  hidden, so it can't see this; it is left as it is, and noted here rather than silently edited.
+- Opening the editor for an article that doesn't exist (`404`) shows an empty editor, as if for a
+  new article, with no error.
+- A failed follow, and a failed favorite, leave the button and the count as they were, which is
+  right, but tell the user nothing.
+- When the request for another page of the feed fails, the list is replaced by "Loading
+  articles..." for good: the articles already on screen and the page buttons are gone, so the user
+  can't go back without reloading.
 
 Other flows were checked too and behave correctly, so their tests assert the good behaviour and are
 not labelled `known-issue`:
@@ -65,6 +76,15 @@ not labelled `known-issue`:
   literal text. (An `<img>` and an `<i>` written in the body do render as elements, so raw HTML is
   allowed through the sanitizer, minus anything executable.) This is asserted as a rendering check
   on an edge-case payload, not as a security scan, which is out of scope for v1.
+- A server error on publish (`500`) and on settings update (`500`) show the message, stay on the
+  page and keep everything typed, including the tags; the button is usable again.
+- Publish and Update Settings disable themselves while a request is in flight, and a second click
+  sends nothing (see the measurement under Evidence).
+- Pagination counts pages correctly at the boundaries (10 articles is one page, 11 is two, 20 is
+  two, 21 is three), and moving to another page swaps the list for the loading message, then shows
+  that page with its button marked current. A single page still shows one "1" button; that is a
+  quirk, not asserted either way beyond the number of buttons.
+- A user with no articles shows the empty message.
 
 ## Evidence
 
@@ -85,6 +105,18 @@ probes got wrong are worth keeping:
   visibility check for that one click, and says so where it does it; the comment being visible
   before and after is asserted.
 
+- **A double-click is not a double-submit, and Playwright's `dblclick()` is not a double-click.** A
+  first version of the in-flight tests used `dblclick()` and failed with two requests on both
+  pages. The button disables itself only after the JavaScript task that handled the first click,
+  and `dblclick()` sends both clicks inside one task, which no mouse can. Measured by clicking
+  twice from inside the page with a controlled gap: 0ms sent two requests on both pages; 1, 5, 10,
+  16, 20, 33, 50 and 100ms (settings) and 5, 16, 50ms (editor) each sent one. So the guard works at
+  any human timing, this is not a defect, and it is not pinned as one. The tests instead click,
+  wait for the button to be disabled, try once more, and count the requests the browser sent.
+  Recorded because the tempting conclusion, "the app has a double-submit bug", was wrong.
+- **The first pagination probe read the page before it had rendered** and reported zero articles;
+  it was rerun with a proper wait before anything was written from it.
+
 Mutation checks covered the specs that assert something did _not_ happen. Each was run, failed as
 expected, and was restored:
 
@@ -95,6 +127,12 @@ expected, and was restored:
 - Inert markup: the inline-handler check was pointed at `src` instead of `on*` and failed, which
   shows it reaches the `<img>` it is meant to inspect; a `__pwned` global planted before the page
   loaded made the final check fail, which shows it can see a real one.
+- Follow, favorite, failed page 2, profile `500` and the unknown-article editor: each was made to
+  succeed (or the article made to exist) and its pinned test failed.
+- The in-flight guard: one attempted mutation, asserting the button is _enabled_, passed, because
+  that assertion is true before the button disables. That mutation was invalid, not the test. The
+  evidence for the request-count assertion is the `dblclick()` run above, where it caught two
+  requests.
 
 ## Consequences
 
