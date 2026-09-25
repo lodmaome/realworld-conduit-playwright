@@ -11,4 +11,8 @@ every time.
 - `scenes.ts` — the ten pages-in-a-state that both suites iterate over, so the two can't
   drift apart on coverage. Add a page here once and both suites pick it up.
 
+- `quarantine.ts` — `quarantined(until, reason)`, the options that mark a test as quarantined.
+  The reason and expiry live on the test; `npm run check:tags` fails once the date passes
+  ([ADR-0012](../../docs/adr/0012-flake-handling.md)).
+
 Call `mockApi(...)` before the first navigation; the routes must exist before the page loads.

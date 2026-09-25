@@ -3,7 +3,9 @@
 Small, dependency-free Node scripts the CI workflow (and developers) call through npm.
 
 - `check-tags.mjs` (`npm run check:tags`) — fails on any test tag outside the agreed
-  vocabulary (`@smoke`, `@quarantine`), or if no `@smoke` test exists. Tag-based selection
+  vocabulary (`@smoke`, `@quarantine`), on a quarantine with no reason or expiry, a malformed or
+  expired one, or a quarantine annotation without the tag, and if no `@smoke` test exists. The
+  rules are in `tools/flake-report/validate.mjs`. Tag-based selection
   fails silently on a typo, so this is what stands between `@smoek` and a test quietly
   dropping out of the smoke gate. It doesn't need the application running.
 - `wait-for-app.mjs` (`npm run wait-for-app`) — blocks until the backend and frontend both
@@ -11,6 +13,9 @@ Small, dependency-free Node scripts the CI workflow (and developers) call throug
   control the upstream images and can't add a compose `HEALTHCHECK` to them.
   `WAIT_TIMEOUT_MS`, `API_BASE_URL` and `FRONTEND_BASE_URL` override the defaults.
 
+- `check-links.mjs` (`npm run check:links`) — fails on a relative link between Markdown files that
+  points at a missing file or a heading that doesn't exist. Documentation that points at moved
+  files or renamed sections is worse than none.
 - `run-all.mjs` — runs several npm scripts in order and keeps going after a failure, exiting
   non-zero if any failed. `test:full` uses it so a functional failure can't hide a visual one
   (`&&` stops at the first failure; `;` isn't portable to cmd.exe).
@@ -21,8 +26,9 @@ Small, dependency-free Node scripts the CI workflow (and developers) call throug
 - `generate-allure-report.mjs` (`npm run allure:generate`) — builds `allure-report/` from
   `allure-results/`. Removes the previous report first (`allure generate` doesn't), strips the
   Google Analytics Allure embeds in every report, and fails if any reference survives.
-- `publish-allure-report.mjs` — the CI publish step: reads trend history from the `gh-pages`
-  branch, generates, and force-pushes the report plus updated history back. Testable locally
+- `publish-allure-report.mjs` — the CI publish step: reads trend history (Allure's and the flake
+  history) from the `gh-pages` branch, generates the report and the flake dashboard, and
+  force-pushes both plus the updated history back. Testable locally
   against any git remote via `PUBLISH_REMOTE`.
 - `clean-results.mjs` (`npm run clean:results`) — removes test output. The Allure reporter
   appends rather than replaces, so results pile up locally until you clean.

@@ -24,7 +24,8 @@ Playwright selects tests by tag (`--grep`), which is easy to get subtly wrong:
 
 - `@smoke` — the critical-path subset: one happy path per feature area, no negative
   cases. Currently 10 of 38 tests, about 5 seconds.
-- `@quarantine` — known-flaky tests, held out of every gating tier.
+- `@quarantine` — known-flaky tests, held out of every gating tier. A quarantine must carry a
+  reason and an expiry date, enforced by `check:tags` ([0012](0012-flake-handling.md)).
 
 Everything else is simply a test, and belongs to the regression tier by default.
 
@@ -84,7 +85,8 @@ to blame — the same reasoning as pinning the upstream apps ([0002](0002-pin-up
   .NET integration tests as part of its build, which is part of that 52s and outside our
   control.
 - Quarantined tests run only on the nightly, so a quarantined regression can sit unnoticed
-  for a day. Making flake rate visible over time is the separate flake-reporting work.
+  for a day. Their state is on the flake dashboard, and a quarantine expires loudly
+  ([0012](0012-flake-handling.md)).
 - The runner pin has to be bumped by hand. GitHub eventually retires old images, so an
   unattended pin turns into a deprecation failure; the trigger to revisit it is the same
   announcement that prompted the pin.

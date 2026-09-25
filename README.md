@@ -4,7 +4,13 @@ A Playwright + TypeScript test automation portfolio against the RealWorld
 ("Conduit" Medium-clone spec) app, self-hosted via Docker Compose so CI fully
 controls the test environment.
 
-**Status: fixtures, page objects, and functional, visual-regression and accessibility suites are in place**, with tiered CI running on GitHub Actions (58 tests). Still to come: flake handling (retry-with-reporting and quarantine) and the PR coverage-gap tool. See the architecture decisions in [docs/adr/](docs/adr/README.md) before adding anything that would contradict them.
+**Status: functional, visual-regression and accessibility suites (58 tests), tiered CI, a published report with trend history, and flake handling are in place.** Still to come: functional specs for the `ui-mocked` project, and the PR coverage-gap tool.
+
+- **Live report:** <https://lodmaome.github.io/realworld-conduit-playwright/> (Allure, with trends)
+- **Flake dashboard:** <https://lodmaome.github.io/realworld-conduit-playwright/flakes/> (published after each run on `main`)
+- **[Test strategy](docs/test-strategy.md)** — what is tested, how, and the known limitations
+- **[Architecture decisions](docs/adr/README.md)** — read before changing anything that would contradict them
+- **[Maintenance runbook](docs/maintenance.md)** — bumping pins, quarantining a test, troubleshooting
 
 ## Target application
 
@@ -88,10 +94,10 @@ factories/      test data builders — every test gets unique data
 api-client/     typed client generated from the backend's OpenAPI spec
 tools/
   coverage-gap/  PR-diff coverage-gap flagger (built last)
-  flake-report/  retry-with-reporting + quarantine (not yet implemented)
-  ci/            tag-vocabulary check and app readiness wait
-docker/         docker-compose.yml + the frontend's own Dockerfile
-docs/adr/       architecture decision records
+  flake-report/  flake reporter, history, dashboard and budget, plus the tag and quarantine rules
+  ci/            readiness wait, report generation and publishing, and the tag check
+docker/         docker-compose.yml, the frontend's Dockerfile, and the pinned Playwright image
+docs/           test strategy, maintenance runbook, and adr/ (architecture decision records)
 ```
 
 Each of the directories above has its own short README explaining its role.
@@ -99,6 +105,7 @@ Each of the directories above has its own short README explaining its role.
 ## Why these choices
 
 Every non-obvious decision (mocking strategy, dependency pinning, package manager,
-report hosting, the two Docker adaptations the target apps required) is recorded in
-[docs/adr/](docs/adr/README.md) with its context and tradeoffs — read there before
-changing any of them.
+report hosting, the Docker adaptations the target apps required, page objects and locators,
+tiers, the pinned visual image, the a11y ratchet, flake handling) is recorded in
+[docs/adr/](docs/adr/README.md) with its context, the evidence, and the tradeoffs — read there
+before changing any of them.

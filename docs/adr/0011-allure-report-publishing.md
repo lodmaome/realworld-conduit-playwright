@@ -85,7 +85,11 @@ a real failure of that kind, and that check corrected one rule.
   the accumulated history survive.
 - **Flake rate is not tracked by this.** "Flaky" here means history-based alternation, not
   retry-based, so a test that passes on retry appears under the report's Retry filter, not as
-  flaky. The dedicated retry-with-reporting work still has to do that.
+  flaky. Retry reporting, the flake rate over time and the budget are in
+  [0012](0012-flake-handling.md).
+- **"Stability by project" stays empty until enough history has built up.** It rendered with six
+  local runs and read "No results" with two on the live site; its default stabilization period is
+  five runs. The other trend charts work from the second run.
 - **Local results accumulate.** Run `npm run clean:results` before a run you intend to report on,
   or the report contains everything since you last cleaned. Local runs write no history: it's
   opt-in through `ALLURE_HISTORY_PATH`, set only by the publish job.
