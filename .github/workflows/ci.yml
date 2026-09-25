@@ -43,6 +43,8 @@ jobs:
       - run: npm run format:check
       - run: npm run check:tags
       - run: npm run check:playwright-image
+      - run: npm run check:links
+      - run: npm run test:tools
 
   test:
     name: Tests
@@ -80,13 +82,19 @@ jobs:
       # directories. Reclaim them, or the host steps below can't clean or overwrite them.
       - name: Reclaim ownership of container-written results
         if: ${{ !cancelled() }}
-        run: sudo chown -R "$(id -u):$(id -g)" test-results playwright-report allure-results 2>/dev/null || true
+        run: sudo chown -R "$(id -u):$(id -g)" test-results playwright-report allure-results flake-results 2>/dev/null || true
 
       # Known-flaky tests run on the full tier only, and never fail the build.
       - name: Run quarantined tests (non-blocking)
         if: ${{ !cancelled() && env.TIER == 'full' }}
         continue-on-error: true
         run: npm run test:quarantine
+
+      # Retries keep a flaky test from failing the run, so say which ones needed one. Reports
+      # only; the budget check in the report job decides when it's too many.
+      - name: Summarise flaky tests
+        if: ${{ !cancelled() }}
+        run: node tools/flake-report/summary.mjs
 
       - name: Collect application logs
         if: ${{ failure() }}
@@ -110,6 +118,14 @@ jobs:
         with:
           name: allure-results
           path: allure-results/
+          retention-days: 1
+          if-no-files-found: warn
+      - name: Upload flake results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: flake-results
+          path: flake-results/
           retention-days: 1
           if-no-files-found: warn
 
@@ -144,10 +160,22 @@ jobs:
         with:
           name: allure-results
           path: allure-results
+      - name: Download flake results
+        # Optional: without it the publish step carries the existing flake history forward.
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: flake-results
+          path: flake-results
       - name: Publish the report
         if: ${{ steps.results.outcome == 'success' }}
         env:
           PUBLISH_REMOTE: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          TIER: ${{ needs.test.outputs.tier }}
           # Quoted: unquoted, YAML reads " #" as the start of a comment and drops the run number.
           ALLURE_REPORT_NAME: 'RealWorld Conduit · ${{ needs.test.outputs.tier }} · run #${{ github.run_number }}'
         run: node tools/ci/publish-allure-report.mjs
+      # After publishing, so the dashboard exists to explain a failure here.
+      - name: Check the flake budget
+        if: ${{ steps.results.outcome == 'success' }}
+        run: node tools/flake-report/check-policy.mjs

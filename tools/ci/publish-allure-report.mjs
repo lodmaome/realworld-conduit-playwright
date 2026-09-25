@@ -15,6 +15,8 @@
 //   PUBLISH_REMOTE      git URL to publish to (in CI it carries the token; never printed)
 //   PUBLISH_BRANCH      branch to publish to (default: gh-pages)
 //   RESULTS_DIR         Allure results to build from (default: allure-results)
+//   FLAKE_RESULTS_DIR   the flake reporter's results (default: flake-results); the flake
+//                       history and dashboard are updated when present, carried forward when not
 //   ALLURE_REPORT_NAME  report title, passed through to allurerc.mjs
 import { execFileSync, spawnSync } from 'node:child_process';
 import {
@@ -23,6 +25,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -34,6 +37,8 @@ const remote = process.env.PUBLISH_REMOTE;
 const branch = process.env.PUBLISH_BRANCH ?? 'gh-pages';
 const resultsDir = process.env.RESULTS_DIR ?? 'allure-results';
 const historyFile = 'allure-history/history.jsonl';
+const flakeHistoryFile = 'flake-history/flake-history.jsonl';
+const flakeResultsDir = process.env.FLAKE_RESULTS_DIR ?? 'flake-results';
 
 if (!remote) {
   console.error('PUBLISH_REMOTE is required');
@@ -63,13 +68,20 @@ try {
   // the two must not be confused, or a transient failure would silently reset the trend.
   const branchExists = git(['ls-remote', '--heads', remote, branch]).trim() !== '';
   mkdirSync('allure-history', { recursive: true });
+  mkdirSync('flake-history', { recursive: true });
   rmSync(historyFile, { force: true });
+  rmSync(flakeHistoryFile, { force: true });
 
+  /** @type {string | null} */
+  let previous = null;
   if (branchExists) {
-    const previous = join(work, 'previous');
+    previous = join(work, 'previous');
     git(['clone', '--quiet', '--depth', '1', '--branch', branch, remote, previous]);
     if (existsSync(join(previous, 'history.jsonl'))) {
       copyFileSync(join(previous, 'history.jsonl'), historyFile);
+    }
+    if (existsSync(join(previous, 'flake-history.jsonl'))) {
+      copyFileSync(join(previous, 'flake-history.jsonl'), flakeHistoryFile);
     }
   }
   const before = countLines(historyFile);
@@ -95,9 +107,36 @@ try {
   }
   console.log(`History now: ${after} run(s)`);
 
+  // The flake dashboard lives in the same site. It needs this run's flake results; if they
+  // are missing, the previous dashboard and history are carried forward instead, because the
+  // force-push below replaces the whole branch and would otherwise drop them.
+  const flakeResultsAvailable =
+    existsSync(flakeResultsDir) && readdirSync(flakeResultsDir).some((n) => n.startsWith('part-'));
+  if (flakeResultsAvailable) {
+    const updated = spawnSync(process.execPath, ['tools/flake-report/update-history.mjs'], {
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        FLAKE_RESULTS_DIR: flakeResultsDir,
+        FLAKE_HISTORY_PATH: flakeHistoryFile,
+        FLAKE_SITE_DIR: 'allure-report',
+      },
+    });
+    if (updated.status !== 0) throw new Error('flake history update failed');
+  } else {
+    console.warn(
+      `No flake results in ${flakeResultsDir}/: carrying the previous flake history forward`,
+    );
+  }
+
   const site = join(work, 'site');
   cpSync('allure-report', site, { recursive: true });
   copyFileSync(historyFile, join(site, 'history.jsonl'));
+  if (existsSync(flakeHistoryFile))
+    copyFileSync(flakeHistoryFile, join(site, 'flake-history.jsonl'));
+  if (!flakeResultsAvailable && previous && existsSync(join(previous, 'flakes'))) {
+    cpSync(join(previous, 'flakes'), join(site, 'flakes'), { recursive: true });
+  }
   writeFileSync(join(site, '.nojekyll'), ''); // serve the report as-is, skip Jekyll processing
 
   const identity = [

@@ -17,14 +17,17 @@ export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
   forbidOnly: isCI,
-  // Day-1 stopgap for ordinary CI environment noise (container cold starts, etc.).
-  // This is intentionally blind — see tools/flake-report for the retry-with-reporting
-  // and quarantine mechanism meant to replace reliance on this once it exists.
+  // One retry in CI absorbs the odd flake so it doesn't block a merge — but never silently:
+  // tools/flake-report records every test that failed then passed, publishes the flake rate
+  // over time, and fails the run when one test needs its retry too often. Locally there are
+  // no retries, so a flake is a failure you see. See docs/adr/0012-flake-handling.md.
   retries: isCI ? 1 : 0,
   reporter: [
     ['list'],
     ['html', { open: 'never' }],
     ['allure-playwright', { resultsDir: 'allure-results' }],
+    // Records which tests failed and then passed on retry, so retries are reported, not silent.
+    ['./tools/flake-report/reporter.mjs'],
   ],
   use: {
     trace: 'on-first-retry',

@@ -44,11 +44,14 @@ services:
       - ../pages:/work/pages
       - ../factories:/work/factories
       - ../api-client:/work/api-client
+      # The flake reporter is loaded by playwright.config.ts, so it has to exist in here too.
+      - ../tools/flake-report:/work/tools/flake-report:ro
       - ../playwright.config.ts:/work/playwright.config.ts:ro
       - ../tsconfig.json:/work/tsconfig.json:ro
       # Results and reports land on the host, where CI uploads them from.
       - ../test-results:/work/test-results
       - ../playwright-report:/work/playwright-report
       - ../allure-results:/work/allure-results
+      - ../flake-results:/work/flake-results
     depends_on:
       - frontend

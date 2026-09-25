@@ -6,6 +6,8 @@ allure-report/
 allure-results/
 blob-report/
 dist/
+flake-history/
+flake-results/
 node_modules/
 playwright-report/
 test-results/
