@@ -23,3 +23,4 @@ place with its status updated.
 | [0010](0010-a11y-as-a-ratchet-on-recorded-violations.md) | Accessibility as a ratchet on recorded violations                            | Accepted |
 | [0011](0011-allure-report-publishing.md)                 | Publishing the Allure report: Allure 3, history in a branch                  | Accepted |
 | [0012](0012-flake-handling.md)                           | Flake handling: retry with reporting, a flake budget, accountable quarantine | Accepted |
+| [0013](0013-api-overrides-for-the-mocked-ui-project.md)  | Per-request overrides for the mocked UI project, and pinning frontend gaps   | Accepted |
