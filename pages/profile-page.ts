@@ -9,6 +9,9 @@ export class ProfilePage {
   readonly editProfileLink: Locator;
   readonly myPostsTab: Locator;
   readonly favoritedPostsTab: Locator;
+  // One entry per error message. The `.error-messages` list itself is always in the
+  // markup, empty until something fails, so it can't tell "no error" from "an error".
+  readonly errors: Locator;
 
   private readonly userInfo: Locator;
 
@@ -20,6 +23,7 @@ export class ProfilePage {
     this.editProfileLink = page.getByRole('link', { name: 'Edit Profile Settings' });
     this.myPostsTab = page.getByRole('link', { name: 'My Posts' });
     this.favoritedPostsTab = page.getByRole('link', { name: 'Favorited Posts' });
+    this.errors = page.locator('.error-messages li');
   }
 
   followButton(username: string): Locator {

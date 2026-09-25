@@ -20,6 +20,14 @@ Call `mockApi({ ... })` before the first navigation. Fixed data comes from
   loading UI, then `gate.release()`. Never a timeout.
 - **An unanswered request fails the test** at teardown, so a spec must stub everything the
   page calls.
+- **"Exactly N requests"**: use `recordRequests(page, method, pathname)` from
+  `tests/support/app-settled.ts`; it counts what the browser sent.
+- **Double-submit**: don't use `dblclick()`. It sends both clicks in one JavaScript task, which
+  no mouse can, and the buttons disable themselves after that task, so it reports a defect that a
+  person can't trigger (measured, see ADR-0013). Click, wait for the button to be disabled, try
+  again.
+- **Lists of articles**: `articleSeries(n)` in `sample-data.ts` gives `n` distinct articles for
+  pagination.
 
 Two things to know about this project's environment: external stylesheets are blocked, so
 icon-only controls (the comment trash can) are empty and unclickable by the normal route, and

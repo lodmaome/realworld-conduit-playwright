@@ -94,3 +94,15 @@ export const dragonComments: StubComment[] = [
     updatedAt: '2026-01-17T12:15:00.000Z',
   },
 ];
+
+/** `count` distinct articles, for exercising pagination. Fixed like everything above. */
+export function articleSeries(count: number): StubArticle[] {
+  return Array.from({ length: count }, (_, index) => ({
+    ...dragonArticle,
+    slug: `series-article-${index + 1}`,
+    title: `Series article ${index + 1}`,
+    tagList: [],
+    favoritesCount: 0,
+    author: anna,
+  }));
+}

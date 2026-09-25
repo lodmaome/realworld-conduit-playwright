@@ -10,12 +10,15 @@ export class ArticleList {
   readonly loadingMessage: Locator;
   readonly emptyMessage: Locator;
   readonly pagination: Locator;
+  // The current page is only marked by the theme's `active` class, as with the feed tabs.
+  readonly activePage: Locator;
 
   constructor(private readonly page: Page) {
     this.previews = page.locator('.article-preview').filter({ has: page.getByRole('heading') });
     this.loadingMessage = page.getByText('Loading articles...');
     this.emptyMessage = page.locator('.empty-feed-message');
     this.pagination = page.locator('.pagination');
+    this.activePage = this.pagination.locator('.active');
   }
 
   preview(title: string): Locator {

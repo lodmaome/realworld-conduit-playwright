@@ -18,6 +18,21 @@ export function requestEnded(page: Page, pathname: string): Promise<void> {
 }
 
 /**
+ * Every request the page sends with this method to `pathname`, from now on. The returned
+ * array fills as requests are made, so assert on it after the flow has finished; it counts
+ * what the browser sent, not what the app reports having done.
+ */
+export function recordRequests(page: Page, method: string, pathname: string): string[] {
+  const sent: string[] = [];
+  page.on('request', (request) => {
+    if (request.method() === method && new URL(request.url()).pathname === pathname) {
+      sent.push(request.url());
+    }
+  });
+  return sent;
+}
+
+/**
  * Lets the app process a response it has just received: two animation frames, by which
  * point Angular has run change detection for it.
  *
