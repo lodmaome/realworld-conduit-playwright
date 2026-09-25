@@ -4,11 +4,29 @@ A Playwright + TypeScript test automation portfolio against the RealWorld
 ("Conduit" Medium-clone spec) app, self-hosted via Docker Compose so CI fully
 controls the test environment.
 
-**Status: functional, visual-regression and accessibility suites (71 tests), tiered CI, a published report with trend history, and flake handling are in place.** Still to come: the PR coverage-gap tool. (The `ui-mocked` project covers the home feed, the article page and sign-in/session failures; failures on the editor, settings and profile pages are not covered.)
+> **This portfolio was built with AI assistance in every part** — tests, page objects, CI,
+> tooling and all documentation were written with Claude Code (each commit carries a
+> `Co-Authored-By` trailer naming the model). The author set the scope, chose the application
+> under test, reviewed the results and evidence, and decided what was committed and pushed.
+> A second, **hands-on** portfolio by the same author is
+> [playwright-qa-portfolio](https://github.com/lodmaome/playwright-qa-portfolio); the two are meant
+> to be read together. How the AI-assisted work was directed, checked and kept honest is in
+> [How this was built](docs/how-this-was-built.md).
+
+|                        | This repo                                                                                         | [playwright-qa-portfolio](https://github.com/lodmaome/playwright-qa-portfolio)                                                                                                                                                   |
+| ---------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| How it was built       | AI-assisted throughout; human-directed and reviewed                                               | Hands-on                                                                                                                                                                                                                         |
+| Application under test | RealWorld "Conduit", self-hosted with Docker Compose from pinned upstream commits                 | [SauceDemo](https://www.saucedemo.com) (UI) and [DummyJSON](https://dummyjson.com) (API), public sites                                                                                                                           |
+| Suites                 | API, UI (real backend), UI with mocked failures, visual, accessibility                            | UI end-to-end, API contract (Zod), visual, accessibility (including keyboard navigation)                                                                                                                                         |
+| Browsers               | Chromium only, stated as a limitation                                                             | Chromium, Firefox and WebKit                                                                                                                                                                                                     |
+| Emphasis               | A controlled, reproducible environment; decision records with evidence; flake handling; tiered CI | Its own [architecture](https://github.com/lodmaome/playwright-qa-portfolio/blob/main/docs/ARCHITECTURE.md), [strategy](https://github.com/lodmaome/playwright-qa-portfolio/blob/main/docs/TEST-STRATEGY.md) and environment docs |
+
+**Status: functional, visual-regression and accessibility suites (87 tests), tiered CI, a published report with trend history, and flake handling are in place.** Still to come: the PR coverage-gap tool. The `ui-mocked` project (29 tests) covers the main failure paths of the feed, article, sign-in, editor, settings and profile pages; what it doesn't cover is listed in the [test strategy](docs/test-strategy.md).
 
 - **Live report:** <https://lodmaome.github.io/realworld-conduit-playwright/> (Allure, with trends)
 - **Flake dashboard:** <https://lodmaome.github.io/realworld-conduit-playwright/flakes/> (published after each run on `main`)
 - **[Test strategy](docs/test-strategy.md)** — what is tested, how, and the known limitations
+- **[How this was built](docs/how-this-was-built.md)** — the AI-assisted process, who did what, and how it was checked
 - **[Architecture decisions](docs/adr/README.md)** — read before changing anything that would contradict them
 - **[Maintenance runbook](docs/maintenance.md)** — bumping pins, quarantining a test, troubleshooting
 
