@@ -100,4 +100,114 @@ test.describe('article page (mocked API)', () => {
     await expect(articlePage.body).toHaveCount(0);
     await expect(articlePage.errors).toHaveCount(0);
   });
+
+  // KNOWN FRONTEND GAP, pinned as observed on 2026-09-25: the article and its comments are
+  // loaded together, so when only the comments request fails, the article that loaded fine
+  // is not shown either. Same handling as above: rewrite this if the frontend changes.
+  test('renders nothing, not even the article, when only its comments fail to load', async ({
+    page,
+    articlePage,
+    mockApi,
+  }) => {
+    test.info().annotations.push({
+      type: 'known-issue',
+      description: 'A failed comments request blanks the whole article page.',
+    });
+    await mockApi({
+      articles,
+      overrides: [
+        { path: commentsUrl, status: 500, body: apiErrors({ server: ['Something went wrong'] }) },
+      ],
+    });
+
+    const commentsEnded = requestEnded(page, `/api${commentsUrl}`);
+    await articlePage.goto(dragonArticle.slug);
+    await commentsEnded;
+    await afterAppHandled(page);
+
+    await expect(articlePage.title).toHaveCount(0);
+    await expect(articlePage.body).toHaveCount(0);
+    await expect(articlePage.errors).toHaveCount(0);
+  });
+
+  // Markup in a body or title is data, not something to run. This is a rendering check on an
+  // edge-case payload, not a security scan (which is out of scope, see the strategy doc).
+  test('renders markup in an article as inert content', async ({ page, articlePage, mockApi }) => {
+    const hostile = {
+      ...dragonArticle,
+      title: 'Hostile <b>title</b> & "quotes"',
+      body: [
+        '<script>window.__pwned = 1</script>',
+        '<img src=x onerror="window.__pwned = 2">',
+        '[a link](javascript:window.__pwned=3)',
+        'Ordinary **bold** text.',
+      ].join('\n\n'),
+    };
+    await mockApi({ articles: [hostile], comments: { [hostile.slug]: [] } });
+
+    await articlePage.goto(hostile.slug);
+    await expect(articlePage.body).toContainText('Ordinary');
+
+    // The title is shown as typed, tags and all, not interpreted.
+    await expect(articlePage.title).toHaveText(hostile.title);
+    await expect(articlePage.body.locator('strong')).toHaveText('bold');
+    await expect(articlePage.body.locator('script')).toHaveCount(0);
+    await expect(articlePage.body.getByRole('link', { name: 'a link' })).not.toHaveAttribute(
+      'href',
+      /^javascript:/i,
+    );
+    // No element in the body carries an inline event handler...
+    const handlers = await articlePage.body.evaluate(
+      (body) =>
+        [body, ...Array.from(body.querySelectorAll('*'))].filter((el) =>
+          el.getAttributeNames().some((name) => name.startsWith('on')),
+        ).length,
+    );
+    expect(handlers).toBe(0);
+    // ...and nothing the payload tried to run did run.
+    expect(await page.evaluate(() => '__pwned' in window)).toBe(false);
+  });
+
+  test.describe('long content', () => {
+    const scrollsSideways = (page: Page) =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      );
+
+    test('a long body of ordinary words wraps and does not widen the page', async ({
+      page,
+      articlePage,
+      mockApi,
+    }) => {
+      const wordy = { ...dragonArticle, body: 'ordinary words '.repeat(200) };
+      await mockApi({ articles: [wordy], comments: { [wordy.slug]: [] } });
+
+      await articlePage.goto(wordy.slug);
+      await expect(articlePage.body).toContainText('ordinary words');
+
+      expect(await scrollsSideways(page)).toBe(false);
+    });
+
+    // KNOWN FRONTEND GAP, pinned as observed on 2026-09-25: a single unbroken run of
+    // characters (a long URL, a hash, pasted junk) is not wrapped, so it widens the page and
+    // the whole page scrolls sideways. 400 characters gave a 5826px-wide page against 1280px;
+    // the same 400 characters split by spaces did not. Rewrite this if the frontend wraps it.
+    test('a body with one unbroken 400-character run widens the page', async ({
+      page,
+      articlePage,
+      mockApi,
+    }) => {
+      test.info().annotations.push({
+        type: 'known-issue',
+        description: 'An unbroken run of characters in a body makes the page scroll sideways.',
+      });
+      const unbroken = { ...dragonArticle, body: 'A'.repeat(400) };
+      await mockApi({ articles: [unbroken], comments: { [unbroken.slug]: [] } });
+
+      await articlePage.goto(unbroken.slug);
+      await expect(articlePage.body).toContainText('AAAA');
+
+      expect(await scrollsSideways(page)).toBe(true);
+    });
+  });
 });
