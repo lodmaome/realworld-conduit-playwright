@@ -21,11 +21,12 @@ controls the test environment.
 | Browsers               | Chromium only, stated as a limitation                                                             | Chromium, Firefox and WebKit                                                                                                                                                                                                     |
 | Emphasis               | A controlled, reproducible environment; decision records with evidence; flake handling; tiered CI | Its own [architecture](https://github.com/lodmaome/playwright-qa-portfolio/blob/main/docs/ARCHITECTURE.md), [strategy](https://github.com/lodmaome/playwright-qa-portfolio/blob/main/docs/TEST-STRATEGY.md) and environment docs |
 
-**Status: functional, visual-regression and accessibility suites (101 tests), tiered CI, a published report with trend history, flake handling, and a PR coverage-gap flagger are in place.** Nothing in the v1 scope is outstanding. The `ui-mocked` project (43 tests) covers the failure paths of every page; what it doesn't cover is listed in the [test strategy](docs/test-strategy.md).
+**Status: functional, visual-regression and accessibility suites (211 tests), tiered CI, a published report with trend history, flake handling, and a PR coverage-gap flagger are in place.** Nothing in the v1 scope is outstanding. The `ui-mocked` project (43 tests) covers the failure paths of every page; what it doesn't cover is listed in the [test strategy](docs/test-strategy.md).
 
 - **Live report:** <https://lodmaome.github.io/realworld-conduit-playwright/> (Allure, with trends)
 - **Flake dashboard:** <https://lodmaome.github.io/realworld-conduit-playwright/flakes/> (published after each run on `main`)
 - **[Test strategy](docs/test-strategy.md)** — what is tested, how, and the known limitations
+- **[Findings](docs/findings.md)** — the 19 defects and gaps this suite found in the app, each with a reproduction
 - **[How this was built](docs/how-this-was-built.md)** — the AI-assisted process, who did what, and how it was checked
 - **[Architecture decisions](docs/adr/README.md)** — read before changing anything that would contradict them
 - **[Maintenance runbook](docs/maintenance.md)** — bumping pins, quarantining a test, troubleshooting

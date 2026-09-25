@@ -22,13 +22,13 @@ everything else:
 
 ## The suites
 
-| Suite       | Proves                                                                                                           | Data                                 | Runs                    | Tests |
-| ----------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------ | ----------------------- | ----- |
-| `api`       | The REST contract, through a typed client generated from the backend's OpenAPI spec                              | Real backend                         | Runner                  | 1     |
-| `ui`        | User journeys end to end: auth, articles, comments, favorites, feed and pagination, profile and follow, settings | Real backend, set up through the API | Runner                  | 37    |
-| `visual`    | The pages look the same: a screenshot per scene at zero pixel tolerance                                          | Fixed stubs                          | Pinned Playwright image | 10    |
-| `a11y`      | No new accessibility violations (axe, WCAG 2.0/2.1 A and AA), and none silently fixed                            | Fixed stubs                          | Runner                  | 10    |
-| `ui-mocked` | UI behaviour the real backend can't easily produce (errors, edge payloads)                                       | Route interception                   | Runner                  | 43    |
+| Suite       | Proves                                                                                                                         | Data                                                 | Runs                    | Tests |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- | ----------------------- | ----- |
+| `api`       | The REST contract: statuses, validation, authorisation and data lifecycles, each response checked against the OpenAPI contract | Real backend (plus offline contract and stub checks) | Runner                  | 111   |
+| `ui`        | User journeys end to end: auth, articles, comments, favorites, feed and pagination, profile and follow, settings               | Real backend, set up through the API                 | Runner                  | 37    |
+| `visual`    | The pages look the same: a screenshot per scene at zero pixel tolerance                                                        | Fixed stubs                                          | Pinned Playwright image | 10    |
+| `a11y`      | No new accessibility violations (axe, WCAG 2.0/2.1 A and AA), and none silently fixed                                          | Fixed stubs                                          | Runner                  | 10    |
+| `ui-mocked` | UI behaviour the real backend can't easily produce (errors, edge payloads)                                                     | Route interception                                   | Runner                  | 43    |
 
 The visual and a11y suites share one list of ten "scenes" (a page in a state), so they can't drift
 apart on coverage. Both render from stubs typed from the OpenAPI schema, with external fonts and
@@ -79,12 +79,25 @@ each run on `main` ([0011](adr/0011-allure-report-publishing.md)). Failures are 
 visual diff, changed accessibility record, failed backend call, missing stub, unreachable
 environment, timeout.
 
+## The API contract
+
+The backend's OpenAPI spec is committed (`api-client/openapi.json`), the types are generated from it,
+and the `api` suite validates every real response against it at run time
+([0015](adr/0015-validate-responses-against-the-contract.md)). The published spec is thinner than
+the backend: it declares only `200` for every operation, no response body for five of them, and no
+`required` field anywhere. So checks are labelled by source, the published `openapi` schema or a
+`supplement` we wrote from observation, and a test fails when the spec improves enough to retire one.
+The stub layer the visual, a11y and mocked-UI suites run on is checked against the same contract,
+offline, so those suites can't go green on stubs that drifted from the backend. Backend defects the
+suite found are pinned as observed and labelled `known-issue`.
+
 ## Endpoint coverage gaps
 
 A pull request that changes the API contract (`api-client/schema.d.ts`) or the backend pin gets a
 report of which changed endpoints no test reaches. Every API request the api, ui and ui-mocked
 suites send is recorded (nothing to annotate), matched to the contract, and counted only if a
-passing real-backend test sent it; an endpoint only stubs reach is called out separately
+passing real-backend test sent it, and only if the test itself did rather than a factory or the auth
+bootstrap preparing it; an endpoint only used to set up, or only stubs reach, is called out separately
 ([0014](adr/0014-pr-coverage-gap-flagger.md)). It reports and does not block. Locally:
 `npm run coverage:record`, then `npm run coverage-gap -- --base origin/main` (or `--all`).
 
@@ -120,11 +133,12 @@ Stated plainly, because a strategy that hides its gaps isn't one.
   changed.
 - **Accessibility is the machine-checkable subset.** No keyboard, focus-order or screen-reader
   testing, and placeholder-only form fields pass because axe accepts a placeholder as a name.
-- **The coverage-gap flagger measures reach, not verification.** A test that only sets data up
-  through an endpoint counts as reaching it, it sees only what the OpenAPI schema shows (a
-  behaviour change that leaves the contract alone is invisible), and the per-endpoint test counts
-  are approximate for requests a page fires on load; the covered or not status is the part to
-  trust ([0014](adr/0014-pr-coverage-gap-flagger.md)).
+- **The coverage-gap flagger measures whether a test drives an endpoint, not whether it checks the
+  answer.** It separates a test's own requests from a fixture's set-up, but a driven request can
+  still go unasserted; it sees only what the OpenAPI schema shows (a behaviour change that leaves the
+  contract alone is invisible); and the per-endpoint test counts are approximate for requests a page
+  fires on load, so the status is the part to trust
+  ([0014](adr/0014-pr-coverage-gap-flagger.md)).
 - **The flake budget sees only `main`**, and no real flake has yet occurred to exercise the
   dashboard on live data.
 - **Out of scope for v1**, deliberately: mutation testing, security scanning, performance and load,
