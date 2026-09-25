@@ -89,8 +89,11 @@ duplicated controls are scoped to their region rather than picked with `.first()
   ([0002](0002-pin-upstream-app-versions.md)), so a markup change only lands when we bump.
 - The icon-glyph behaviour behind `iconLabel()` was verified on Chromium only, which is
   the only browser the projects run today. Adding Firefox or WebKit means re-checking it.
-- Placeholder locators and the missing labels are themselves accessibility defects in the
-  app; the locator strategy works around them and the a11y suite should report them.
+- Placeholder-only form fields are a weak substitute for labels (the text vanishes as soon
+  as you type), and the locator strategy leans on them. Automated a11y scanning won't
+  flag this: axe-core accepts a placeholder as an accessible name, and the a11y suite's
+  scan of the login and register pages reports no `label` violation. It stays a manual
+  finding.
 
 ## Alternatives considered
 

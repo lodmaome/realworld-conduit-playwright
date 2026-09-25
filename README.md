@@ -4,7 +4,7 @@ A Playwright + TypeScript test automation portfolio against the RealWorld
 ("Conduit" Medium-clone spec) app, self-hosted via Docker Compose so CI fully
 controls the test environment.
 
-**Status: fixtures, page objects, and a first UI + API suite are in place** (38 tests, tagged `@smoke` where they'd gate a fast run). Visual regression, accessibility, CI, reporting, flake handling and the coverage-gap tool are still to come. See the architecture decisions in [docs/adr/](docs/adr/README.md) before adding anything that would contradict them.
+**Status: fixtures, page objects, and functional, visual-regression and accessibility suites are in place**, with tiered CI running on GitHub Actions (58 tests). Still to come: the published Allure report, flake handling (retry-with-reporting and quarantine) and the PR coverage-gap tool. See the architecture decisions in [docs/adr/](docs/adr/README.md) before adding anything that would contradict them.
 
 ## Target application
 
@@ -46,12 +46,14 @@ Tests are selected by tier, and CI picks the tier from what triggered the run
 ([ADR-0008](docs/adr/0008-test-tiers-and-ci-triggers.md)). Only `@smoke` and
 `@quarantine` are tags; every other test is regression by default.
 
-| Command                   | Runs                                            | CI trigger      |
-| ------------------------- | ----------------------------------------------- | --------------- |
-| `npm run test:smoke`      | the happy path of each feature area             | pull request    |
-| `npm run test:regression` | all functional tests (`api`, `ui`, `ui-mocked`) | push to `main`  |
-| `npm run test:full`       | everything, including visual and a11y           | nightly, manual |
-| `npm run test:quarantine` | known-flaky tests only, never blocking          | nightly         |
+| Command                   | Runs                                                | CI trigger      |
+| ------------------------- | --------------------------------------------------- | --------------- |
+| `npm run test:smoke`      | the happy path of each feature area                 | pull request    |
+| `npm run test:regression` | all functional tests (`api`, `ui`, `ui-mocked`)     | push to `main`  |
+| `npm run test:a11y`       | accessibility scans against the recorded violations | (part of full)  |
+| `npm run test:visual`     | screenshots, run inside the pinned Playwright image | (part of full)  |
+| `npm run test:full`       | regression + a11y + visual                          | nightly, manual |
+| `npm run test:quarantine` | known-flaky tests only, never blocking              | nightly         |
 
 `npm run check:tags` fails on any tag outside that vocabulary, so a typo can't quietly
 drop a test out of the smoke run.
@@ -64,8 +66,9 @@ tests/
   api/          API-only specs, no browser
   ui/           functional UI specs, real backend
   ui-mocked/    UI specs mocked via Playwright route interception
-  visual/       visual regression (reuses tests/ui/'s page objects)
-  a11y/         accessibility (reuses tests/ui/'s page objects)
+  visual/       visual regression, in the pinned image
+  a11y/         accessibility scans, recorded as a ratchet
+  support/      API stubs, fixed sample data and the scenes both suites share
 pages/          page objects, exposed as fixtures
 factories/      test data builders — every test gets unique data
 api-client/     typed client generated from the backend's OpenAPI spec

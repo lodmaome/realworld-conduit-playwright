@@ -25,7 +25,7 @@ In order of preference:
 
 1. **Role + name** (`getByRole`) — links, headings, most buttons.
 2. **Placeholder** (`getByPlaceholder`) — every form field. The app has no `<label>`s,
-   so placeholders are the only accessible hook (also an a11y finding worth reporting).
+   so placeholders are the only accessible hook (axe-core accepts a placeholder as a name, so this isn't flagged by the a11y suite).
 3. **Shared RealWorld theme classes** (`.navbar`, `.banner`, `.error-messages`,
    `.article-preview`, `.card`, ...) — only where there is no role or text hook, and only
    classes defined by the RealWorld spec's common stylesheet, which every implementation

@@ -28,17 +28,18 @@ Playwright selects tests by tag (`--grep`), which is easy to get subtly wrong:
 
 Everything else is simply a test, and belongs to the regression tier by default.
 
-| Tier         | Selection                                                               | Runs on                  |
-| ------------ | ----------------------------------------------------------------------- | ------------------------ |
-| `smoke`      | `@smoke`, minus `@quarantine`                                           | pull requests            |
-| `regression` | all functional projects (`api`, `ui`, `ui-mocked`), minus `@quarantine` | push to `main`           |
-| `full`       | all projects, including `visual` and `a11y`, minus `@quarantine`        | nightly, manual dispatch |
-| quarantine   | `@quarantine` only — non-blocking, on the `full` run                    | nightly                  |
+| Tier         | Selection                                                                                                                                            | Runs on                  |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `smoke`      | `@smoke`, minus `@quarantine`                                                                                                                        | pull requests            |
+| `regression` | all functional projects (`api`, `ui`, `ui-mocked`), minus `@quarantine`                                                                              | push to `main`           |
+| `full`       | regression, plus `a11y` (on the runner) and `visual` (in the pinned image, [0009](0009-visual-regression-in-a-pinned-image.md)), minus `@quarantine` | nightly, manual dispatch |
+| quarantine   | `@quarantine` only — non-blocking, on the `full` run                                                                                                 | nightly                  |
 
 **One definition, in `package.json`.** Each tier is an npm script (`test:smoke`,
 `test:regression`, `test:full`, `test:quarantine`). The workflow only chooses which script
 to call from the trigger, so a developer reproduces a CI tier locally with the same
-command.
+command. `test:full` chains three of them through `tools/ci/run-all.mjs`, which keeps going
+after a failure, so an unrelated functional failure can't hide a visual regression.
 
 **The tag vocabulary is enforced.** `npm run check:tags` lists every test through
 Playwright's JSON reporter and fails on any tag outside the allowed set, or if no
@@ -87,9 +88,10 @@ to blame — the same reasoning as pinning the upstream apps ([0002](0002-pin-up
 - The runner pin has to be bumped by hand. GitHub eventually retires old images, so an
   unattended pin turns into a deprecation failure; the trigger to revisit it is the same
   announcement that prompted the pin.
-- CI installs Chromium with `playwright install` on the runner rather than running inside
-  the Playwright container image. That is fine for functional tests, but the visual suite
-  will need baselines produced in one pinned image used both locally and in CI.
+- Two browser builds are in play: functional and a11y tests use the Chromium installed on
+  the runner, while the visual suite runs in the pinned Playwright image
+  ([0009](0009-visual-regression-in-a-pinned-image.md)). That is deliberate — only pixels
+  need the pinned environment, and the a11y results were checked to be identical in both.
 
 ## Alternatives considered
 

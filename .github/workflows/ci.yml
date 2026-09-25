@@ -42,6 +42,7 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run check:tags
+      - run: npm run check:playwright-image
 
   test:
     name: Tests
@@ -68,6 +69,12 @@ jobs:
 
       - name: Run ${{ env.TIER }} tests
         run: npm run "test:${TIER}"
+
+      # The visual suite runs in a container as root and writes into the bind-mounted results
+      # directories. Reclaim them, or the host steps below can't clean or overwrite them.
+      - name: Reclaim ownership of container-written results
+        if: ${{ !cancelled() }}
+        run: sudo chown -R "$(id -u):$(id -g)" test-results playwright-report allure-results 2>/dev/null || true
 
       # Known-flaky tests run on the full tier only, and never fail the build.
       - name: Run quarantined tests (non-blocking)
