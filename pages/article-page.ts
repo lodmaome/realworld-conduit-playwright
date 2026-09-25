@@ -20,7 +20,9 @@ export class ArticlePage {
   readonly commentInput: Locator;
   readonly postCommentButton: Locator;
   readonly comments: Locator;
-  // Load, comment-post, and comment-delete failures each render their own error list.
+  // One entry per error message, each rendered as "<field> <message>". Not the
+  // `.error-messages` lists themselves: the page always renders two of them, empty when
+  // nothing has failed, so the list wrapper can't tell "no error" from "an error".
   readonly errors: Locator;
   // Shown instead of the comment form to anonymous visitors.
   readonly commentSignInPrompt: Locator;
@@ -44,7 +46,7 @@ export class ArticlePage {
     this.postCommentButton = page.getByRole('button', { name: 'Post Comment' });
     // The comment form is also a `.card`; only real comments contain `.card-text`.
     this.comments = page.locator('.card').filter({ has: page.locator('.card-text') });
-    this.errors = page.locator('.error-messages');
+    this.errors = page.locator('.error-messages li');
     this.commentSignInPrompt = page.getByText('to add comments on this article');
   }
 

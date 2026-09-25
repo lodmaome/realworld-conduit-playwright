@@ -12,9 +12,29 @@ export type StubProfile = Schemas['Conduit.Features.Profiles.Profile'];
 // The client's User, not the raw generated one: the token is always present on a real response.
 export type StubUser = User;
 
+/**
+ * How one request should be answered instead of by the fixed stubs: a failure status with
+ * an error body, or a dropped connection. Optionally held back until `until` settles, so a
+ * test can freeze the app in its loading state and release it on demand (see `deferred`).
+ */
+export type ApiOverride = {
+  /** Defaults to GET. */
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  /** Matched against the path without its `/api` prefix; a string must match it exactly. */
+  path: string | RegExp;
+  /** When given, every listed query parameter must be present with this value. */
+  query?: Record<string, string>;
+  until?: Promise<unknown>;
+} & ({ status: number; body?: unknown } | { abort: true });
+
 export type ApiMockConfig = {
   /** Signs the app in: seeds its token and answers `GET /user`. Omit for an anonymous visitor. */
   user?: StubUser;
+  /**
+   * Checked before everything below, first match wins. This is the only way to answer a
+   * non-GET request, and the way to make a request that would normally succeed fail.
+   */
+  overrides?: ApiOverride[];
   /** The global feed (`GET /articles`); also where single articles are looked up. */
   articles?: StubArticle[];
   /** The signed-in user's "Your Feed" (`GET /articles/feed`). */
@@ -47,6 +67,26 @@ const notFound = (what: string): Stubbed => ({
   status: 404,
   body: { errors: { [what]: ['not found'] } },
 });
+
+/** The error body the real API sends: `{ errors: { field: [messages] } }`. */
+export const apiErrors = (errors: Record<string, string[]>) => ({ errors });
+
+/** A promise a test settles by hand: `await` it in the app's path, `resolve()` from the test. */
+export function deferred(): { promise: Promise<void>; release: () => void } {
+  let release!: () => void;
+  const promise = new Promise<void>((resolve) => (release = resolve));
+  return { promise, release };
+}
+
+function overrideFor(config: ApiMockConfig, method: string, url: URL): ApiOverride | undefined {
+  const path = url.pathname.replace(/^\/api/, '');
+  return config.overrides?.find(
+    (o) =>
+      (o.method ?? 'GET') === method &&
+      (typeof o.path === 'string' ? o.path === path : o.path.test(path)) &&
+      Object.entries(o.query ?? {}).every(([key, value]) => url.searchParams.get(key) === value),
+  );
+}
 
 function pageOf(articles: StubArticle[], url: URL): Stubbed {
   const tag = url.searchParams.get('tag');
@@ -127,6 +167,15 @@ export async function installApiMock(
       if (request.method() === 'OPTIONS') {
         return route.fulfill({ status: 204, headers: CORS_HEADERS });
       }
+      const override = overrideFor(config, request.method(), url);
+      if (override) {
+        await override.until;
+        // The test can end while a response is still held back; the page is gone by then.
+        if (page.isClosed()) return;
+        if ('abort' in override) return route.abort('failed');
+        return fulfil(route, { status: override.status, body: override.body ?? {} });
+      }
+
       const stub = request.method() === 'GET' ? stubFor(config, url) : undefined;
       if (stub) return fulfil(route, stub);
 
