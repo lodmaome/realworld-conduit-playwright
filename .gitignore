@@ -6,6 +6,7 @@ allure-report/
 allure-results/
 blob-report/
 dist/
+endpoint-hits/
 flake-history/
 flake-results/
 node_modules/

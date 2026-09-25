@@ -78,6 +78,31 @@ jobs:
       - name: Run ${{ env.TIER }} tests
         run: npm run "test:${TIER}"
 
+      # On a pull request that touches the API contract or the backend pin, say which changed
+      # endpoints no test reaches (docs/adr/0014). Every other change skips this: recording
+      # re-runs the api, ui and ui-mocked suites, which costs a couple of minutes. Report-only;
+      # the step fails only if the tests do or the tool cannot give an honest answer.
+      - name: Did the API contract change?
+        if: ${{ github.event_name == 'pull_request' }}
+        id: contract
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASE_SHA"
+          if git diff --quiet "$BASE_SHA" HEAD -- api-client/schema.d.ts docker/docker-compose.yml; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Record which endpoints the tests reach
+        if: ${{ steps.contract.outputs.changed == 'true' }}
+        run: npm run coverage:record
+      - name: Flag changed endpoints no test reaches
+        if: ${{ steps.contract.outputs.changed == 'true' }}
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node tools/coverage-gap/cli.mjs --base "$BASE_SHA"
+
       # The visual suite runs in a container as root and writes into the bind-mounted results
       # directories. Reclaim them, or the host steps below can't clean or overwrite them.
       - name: Reclaim ownership of container-written results

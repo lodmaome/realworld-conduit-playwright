@@ -9,6 +9,7 @@ for (const dir of [
   'allure-results',
   'allure-report',
   'flake-results',
+  'endpoint-hits',
   'test-results',
   'playwright-report',
 ]) {

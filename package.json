@@ -31,6 +31,8 @@
     "check:tags": "node tools/ci/check-tags.mjs",
     "check:playwright-image": "node tools/ci/check-playwright-image.mjs",
     "check:links": "node tools/ci/check-links.mjs",
+    "coverage:record": "node tools/coverage-gap/record.mjs",
+    "coverage-gap": "node tools/coverage-gap/cli.mjs",
     "test:tools": "node --test \"tools/**/*.test.mjs\"",
     "wait-for-app": "node tools/ci/wait-for-app.mjs",
     "generate:api-types": "openapi-typescript http://localhost:8080/swagger/v1/swagger.json -o api-client/schema.d.ts",
