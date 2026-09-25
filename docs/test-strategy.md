@@ -44,16 +44,17 @@ opens the tag's page. Nothing assumes a seeded user or an empty feed.
 
 ## Pitfalls this design avoids
 
-| Pitfall                                           | How                                                                                                                                                                   |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Brittle locators                                  | Role, then placeholder, then shared theme classes; never generated `_ngcontent-*` attributes. Positional locators, `force: true` and `waitForTimeout` are lint errors |
-| Icon glyphs leaking into accessible names         | Name matching for icon buttons goes through `iconLabel()`; found by running against the real page, not by reading the markup                                          |
-| Hard sleeps, races                                | Web-first assertions; readiness comes from the app's own test hook or a response, never a clock                                                                       |
-| Tests depending on each other                     | Unique data per test; no shared login state (`authenticatedPage` seeds a fresh user's token, once)                                                                    |
-| Environment drift in screenshots                  | One pinned image, locale, timezone and colour scheme fixed, animations off; the suite refuses to run elsewhere                                                        |
-| A tag typo silently dropping a test from the gate | `check:tags` fails on any tag outside the vocabulary                                                                                                                  |
-| A retry hiding an unreliable test                 | Every retry is recorded, shown, trended, and budgeted ([0012](adr/0012-flake-handling.md))                                                                            |
-| A quarantine that lives forever                   | It needs a reason and an expiry, and fails the static check when it lapses                                                                                            |
+| Pitfall                                           | How                                                                                                                                                                                |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Brittle locators                                  | Role, then placeholder, then shared theme classes; never generated `_ngcontent-*` attributes. Positional locators, `force: true` and `waitForTimeout` are lint errors              |
+| Icon glyphs leaking into accessible names         | Name matching for icon buttons goes through `iconLabel()`; found by running against the real page, not by reading the markup                                                       |
+| Hard sleeps, races                                | Web-first assertions; readiness comes from the app's own test hook or a response, never a clock                                                                                    |
+| Tests depending on each other                     | Unique data per test; no shared login state (`authenticatedPage` seeds a fresh user's token, once)                                                                                 |
+| Environment drift in screenshots                  | One pinned image, locale, timezone and colour scheme fixed, animations off; the suite refuses to run elsewhere                                                                     |
+| A tag typo silently dropping a test from the gate | `check:tags` fails on any tag outside the vocabulary                                                                                                                               |
+| A retry hiding an unreliable test                 | Every retry is recorded, shown, trended, and budgeted ([0012](adr/0012-flake-handling.md))                                                                                         |
+| A changed endpoint nobody tests                   | The coverage-gap flagger lists changed endpoints no real-backend test reaches, and warns when a backend pin moved without the schema ([0014](adr/0014-pr-coverage-gap-flagger.md)) |
+| A quarantine that lives forever                   | It needs a reason and an expiry, and fails the static check when it lapses                                                                                                         |
 
 ## Tiers and CI
 
@@ -77,6 +78,15 @@ An Allure report with trend history, and the flake dashboard, are published to G
 each run on `main` ([0011](adr/0011-allure-report-publishing.md)). Failures are grouped by cause:
 visual diff, changed accessibility record, failed backend call, missing stub, unreachable
 environment, timeout.
+
+## Endpoint coverage gaps
+
+A pull request that changes the API contract (`api-client/schema.d.ts`) or the backend pin gets a
+report of which changed endpoints no test reaches. Every API request the api, ui and ui-mocked
+suites send is recorded (nothing to annotate), matched to the contract, and counted only if a
+passing real-backend test sent it; an endpoint only stubs reach is called out separately
+([0014](adr/0014-pr-coverage-gap-flagger.md)). It reports and does not block. Locally:
+`npm run coverage:record`, then `npm run coverage-gap -- --base origin/main` (or `--all`).
 
 ## Known limitations
 
@@ -110,6 +120,10 @@ Stated plainly, because a strategy that hides its gaps isn't one.
   changed.
 - **Accessibility is the machine-checkable subset.** No keyboard, focus-order or screen-reader
   testing, and placeholder-only form fields pass because axe accepts a placeholder as a name.
+- **The coverage-gap flagger measures reach, not verification.** A test that only sets data up
+  through an endpoint counts as reaching it, it sees only what the OpenAPI schema shows (a
+  behaviour change that leaves the contract alone is invisible), and its CI job has not yet run
+  on a real pull request ([0014](adr/0014-pr-coverage-gap-flagger.md)).
 - **The flake budget sees only `main`**, and no real flake has yet occurred to exercise the
   dashboard on live data.
 - **Out of scope for v1**, deliberately: mutation testing, security scanning, performance and load,
@@ -117,5 +131,4 @@ Stated plainly, because a strategy that hides its gaps isn't one.
 
 ## What is not built yet
 
-The PR coverage-gap tool: given a pull request's diff, flag changed endpoints with no test that
-reaches them.
+Nothing in the v1 scope. What was left out on purpose is listed under known limitations.

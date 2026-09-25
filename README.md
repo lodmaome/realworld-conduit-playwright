@@ -21,7 +21,7 @@ controls the test environment.
 | Browsers               | Chromium only, stated as a limitation                                                             | Chromium, Firefox and WebKit                                                                                                                                                                                                     |
 | Emphasis               | A controlled, reproducible environment; decision records with evidence; flake handling; tiered CI | Its own [architecture](https://github.com/lodmaome/playwright-qa-portfolio/blob/main/docs/ARCHITECTURE.md), [strategy](https://github.com/lodmaome/playwright-qa-portfolio/blob/main/docs/TEST-STRATEGY.md) and environment docs |
 
-**Status: functional, visual-regression and accessibility suites (101 tests), tiered CI, a published report with trend history, and flake handling are in place.** Still to come: the PR coverage-gap tool. The `ui-mocked` project (43 tests) covers the failure paths of every page; what it doesn't cover is listed in the [test strategy](docs/test-strategy.md).
+**Status: functional, visual-regression and accessibility suites (101 tests), tiered CI, a published report with trend history, flake handling, and a PR coverage-gap flagger are in place.** Nothing in the v1 scope is outstanding. The `ui-mocked` project (43 tests) covers the failure paths of every page; what it doesn't cover is listed in the [test strategy](docs/test-strategy.md).
 
 - **Live report:** <https://lodmaome.github.io/realworld-conduit-playwright/> (Allure, with trends)
 - **Flake dashboard:** <https://lodmaome.github.io/realworld-conduit-playwright/flakes/> (published after each run on `main`)
@@ -96,6 +96,22 @@ npm run allure:open
 
 Local reports carry no history; only the CI publish step records it.
 
+## API coverage gaps
+
+A pull request that changes the API contract (`api-client/schema.d.ts`) or the backend pin gets a
+report of which changed endpoints no test reaches
+([ADR-0014](docs/adr/0014-pr-coverage-gap-flagger.md)). It records the API requests the `api`,
+`ui` and `ui-mocked` suites send, so nothing needs annotating. To run it yourself:
+
+```bash
+npm run coverage:record                       # run those suites with recording on
+npm run coverage-gap -- --base origin/main    # what this branch changed, and whether tests reach it
+npm run coverage-gap -- --all                 # every endpoint in the contract
+```
+
+It reports and does not block, and "reached" is not "verified": see
+[tools/coverage-gap](tools/coverage-gap/README.md).
+
 ## Project structure
 
 ```
@@ -111,7 +127,7 @@ pages/          page objects, exposed as fixtures
 factories/      test data builders — every test gets unique data
 api-client/     typed client generated from the backend's OpenAPI spec
 tools/
-  coverage-gap/  PR-diff coverage-gap flagger (built last)
+  coverage-gap/  flags changed API endpoints no test reaches: recorder runner, manifest, diff, report
   flake-report/  flake reporter, history, dashboard and budget, plus the tag and quarantine rules
   ci/            readiness wait, report generation and publishing, and the tag check
 docker/         docker-compose.yml, the frontend's Dockerfile, and the pinned Playwright image
