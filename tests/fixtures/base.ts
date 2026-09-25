@@ -3,6 +3,13 @@ import { createApiClient, type ApiClient, type Article } from '@api-client/clien
 import { createArticle, type NewArticleOverrides } from '@factories/article-factory';
 import { createUser, type CreatedUser, type NewUserOverrides } from '@factories/user-factory';
 import { installApiMock, type ApiMockConfig } from '../support/api-mock';
+import {
+  recordingDir,
+  trackApiHits,
+  trackBrowserHits,
+  writeEndpointHits,
+  type EndpointHit,
+} from '../support/endpoint-hits';
 import { Header } from '@pages/components/header';
 import { ArticlePage } from '@pages/article-page';
 import { EditorPage } from '@pages/editor-page';
@@ -34,6 +41,7 @@ type PageObjectFixtures = {
 export type PageObjects = PageObjectFixtures;
 
 type Fixtures = PageObjectFixtures & {
+  endpointHits: EndpointHit[];
   pages: PageObjects;
   mockApi: (config?: ApiMockConfig) => Promise<void>;
   apiClient: ApiClient;
@@ -44,12 +52,33 @@ type Fixtures = PageObjectFixtures & {
 };
 
 export const test = base.extend<Fixtures>({
+  // Collects the API endpoints this test reaches, and writes them out when it ends. Does
+  // nothing unless RECORD_ENDPOINT_HITS is set. See tools/coverage-gap and docs/adr/0014.
+  endpointHits: [
+    async ({}, use, testInfo) => {
+      const hits: EndpointHit[] = [];
+      await use(hits);
+      const dir = recordingDir();
+      if (dir) writeEndpointHits(dir, testInfo, hits);
+    },
+    { auto: true },
+  ],
+
+  // The browser context, watched for API requests when recording. Everything the pages under
+  // test ask the API for, including requests a route stubs, is seen here.
+  context: async ({ context, endpointHits }, use) => {
+    if (recordingDir()) trackBrowserHits(context, API_BASE_URL, endpointHits);
+    await use(context);
+  },
+
   // A dedicated request context scoped to the API's own base URL — never the
   // ambient `request` fixture, whose baseURL follows whatever a given project (ui,
   // visual, a11y, ...) set for the browser, i.e. the frontend, not the API.
-  apiClient: async ({ playwright }, use) => {
+  apiClient: async ({ playwright, endpointHits }, use) => {
     const context = await playwright.request.newContext({ baseURL: API_BASE_URL });
-    await use(createApiClient(context));
+    await use(
+      createApiClient(recordingDir() ? trackApiHits(context, API_BASE_URL, endpointHits) : context),
+    );
     await context.dispose();
   },
 
