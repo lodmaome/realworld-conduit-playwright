@@ -61,6 +61,12 @@ frontend gains an error state. Observed on 2026-09-25:
 - When the request for another page of the feed fails, the list is replaced by "Loading
   articles..." for good: the articles already on screen and the page buttons are gone, so the user
   can't go back without reloading.
+- The same "Loading ..." with no error for a failed Your Feed and a failed Favorited Posts list.
+  A failed popular-tags request is the same in a different place: the sidebar says "Loading
+  tags..." for good, while the feed beside it works.
+- On the article page, a failed delete, favorite or follow tells the user nothing. The delete
+  leaves the author on the article; the other two leave the button and count as they were.
+  (A failed _comment_ delete, by contrast, does show its error.)
 
 Other flows were checked too and behave correctly, so their tests assert the good behaviour and are
 not labelled `known-issue`:
@@ -84,7 +90,15 @@ not labelled `known-issue`:
   two, 21 is three), and moving to another page swaps the list for the loading message, then shows
   that page with its button marked current. A single page still shows one "1" button; that is a
   quirk, not asserted either way beyond the number of buttons.
-- A user with no articles shows the empty message.
+- A user with no articles shows the empty message; an empty tag list shows "No tags are here...
+  yet."; a user who has favorited nothing shows the empty message.
+- Registration: rejected details (`422`) show every message and keep the form; a server error
+  (`500`) shows its message and leaves the button usable; the button disables while a request is in
+  flight and a second click sends nothing.
+- Your Feed shows the loading message and then its articles, and after it fails the Global Feed
+  tab still works, so the user can recover without reloading.
+- The Favorited Posts tab asks for `favorited=<user>` (checked from the requests the browser
+  sent) and shows those articles instead of the user's own posts.
 
 ## Evidence
 
@@ -114,6 +128,18 @@ probes got wrong are worth keeping:
   any human timing, this is not a defect, and it is not pinned as one. The tests instead click,
   wait for the button to be disabled, try once more, and count the requests the browser sent.
   Recorded because the tempting conclusion, "the app has a double-submit bug", was wrong.
+- **`HomePage.activeFeedTab` matched two elements.** The tag-filter tab is always in the markup,
+  hidden until a tag is chosen, and carries the `active` class too. The real-backend suite never
+  hit it because on a tag page that tab is the visible one. The probe printed the tabs' texts, an
+  array in which the hidden one showed as a blank string, and the first real assertion failed with
+  a strict-mode violation, the same trap as the empty error lists above. The locator now excludes
+  hidden items; the real-backend home spec was rerun with it and still passes.
+- **While the tags request is pending the sidebar isn't in the page at all**; it appears only once
+  the request is answered, so there is no loading state to assert for the tags, only the failed and
+  empty ones. Found when a "held" probe timed out on a sidebar that wasn't there.
+- **The stub layer doesn't filter by `favorited`**, so the Favorited Posts tab's list comes from an
+  override with `query: { favorited }`; the stub layer was left alone rather than taught which
+  user favorited what.
 - **The first pagination probe read the page before it had rendered** and reported zero articles;
   it was rerun with a proper wait before anything was written from it.
 
@@ -129,6 +155,12 @@ expected, and was restored:
   loaded made the final check fail, which shows it can see a real one.
 - Follow, favorite, failed page 2, profile `500` and the unknown-article editor: each was made to
   succeed (or the article made to exist) and its pinned test failed.
+- Tags, Your Feed, article delete, article favorite, article follow and Favorited Posts: each was
+  made to succeed and its pinned test failed. Two of the first attempts were invalid and are not
+  counted: my mutation script matched only multi-line overrides, so on a one-line override it
+  silently mutated the _next_ test, and the tags check "passed" for that reason; and the Your Feed
+  override is defined before its test, so the script found nothing. Both were redone against the
+  right line, after checking the diff of what was changed.
 - The in-flight guard: one attempted mutation, asserting the button is _enabled_, passed, because
   that assertion is true before the button disables. That mutation was invalid, not the test. The
   evidence for the request-count assertion is the `dblclick()` run above, where it caught two

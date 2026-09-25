@@ -28,7 +28,7 @@ everything else:
 | `ui`        | User journeys end to end: auth, articles, comments, favorites, feed and pagination, profile and follow, settings | Real backend, set up through the API | Runner                  | 37    |
 | `visual`    | The pages look the same: a screenshot per scene at zero pixel tolerance                                          | Fixed stubs                          | Pinned Playwright image | 10    |
 | `a11y`      | No new accessibility violations (axe, WCAG 2.0/2.1 A and AA), and none silently fixed                            | Fixed stubs                          | Runner                  | 10    |
-| `ui-mocked` | UI behaviour the real backend can't easily produce (errors, edge payloads)                                       | Route interception                   | Runner                  | 29    |
+| `ui-mocked` | UI behaviour the real backend can't easily produce (errors, edge payloads)                                       | Route interception                   | Runner                  | 43    |
 
 The visual and a11y suites share one list of ten "scenes" (a page in a state), so they can't drift
 apart on coverage. Both render from stubs typed from the OpenAPI schema, with external fonts and
@@ -89,18 +89,20 @@ Stated plainly, because a strategy that hides its gaps isn't one.
   assume, beyond types generated from its spec.
 - **Screenshots aren't production-faithful.** With the external stylesheets blocked, text is the
   image's fallback fonts and icon glyphs are absent, so an icon-font regression isn't caught.
-- **`ui-mocked` covers the main failure paths, not every one.** Covered: the home feed (loading,
-  empty, failed, pagination boundaries and page changes, a failed favorite), the article page
-  (failed and rejected comments, a missing article, hostile and very long content), sign-in and
+- **`ui-mocked` covers the failure paths of every page, but not every failure.** Covered: the home
+  feed (loading, empty, failed, Your Feed, pagination boundaries and page changes, the popular
+  tags, a failed favorite), the article page (failed and rejected comments, a missing article, a
+  failed delete, favorite or follow, hostile and very long content), registration, sign-in and
   session failures, the editor and settings (server errors, the in-flight guard), and the profile
-  (empty, unloadable, a failed follow). Not covered: registration, a failing popular-tags list,
-  "Your Feed" failures, failed article delete or favorite on the article page, and the profile's
-  Favorited Posts tab.
-- **Eleven of its tests pin frontend behaviour a user would call a defect**, asserted as observed
-  and labelled `known-issue`: no error state for a failed feed, page change, unknown article,
-  failed comments or unloadable profile; a blank editor for an unknown article; a failed follow or
-  favorite that tells the user nothing; and a long unbroken word widening the page. Ten of the
-  eleven assert that something did not happen, and the app gives no signal to wait on, so they
+  (empty, unloadable, a failed follow, the Favorited Posts tab). Not covered: the success paths of
+  writes (the real-backend suite owns those), a dropped connection anywhere but the home feed, and
+  slow responses beyond the ones named above.
+- **Seventeen of its tests pin frontend behaviour a user would call a defect**, asserted as
+  observed and labelled `known-issue`. The recurring one is that a failed request for a list, a
+  page, a tab or the tags leaves "Loading ..." on screen for good, with no error; others are a
+  blank page for an unknown article, profile or editor target, a failed delete, follow or favorite
+  that tells the user nothing, and a long unbroken word widening the page. Sixteen of the
+  seventeen assert that something did not happen, and the app gives no signal to wait on, so they
   narrow that window rather than close it
   ([0013](adr/0013-api-overrides-for-the-mocked-ui-project.md)).
 - **One real-backend test overpromises.** `tests/ui/profile.spec.ts` ("a profile that does not

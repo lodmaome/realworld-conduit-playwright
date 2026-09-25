@@ -21,7 +21,7 @@ controls the test environment.
 | Browsers               | Chromium only, stated as a limitation                                                             | Chromium, Firefox and WebKit                                                                                                                                                                                                     |
 | Emphasis               | A controlled, reproducible environment; decision records with evidence; flake handling; tiered CI | Its own [architecture](https://github.com/lodmaome/playwright-qa-portfolio/blob/main/docs/ARCHITECTURE.md), [strategy](https://github.com/lodmaome/playwright-qa-portfolio/blob/main/docs/TEST-STRATEGY.md) and environment docs |
 
-**Status: functional, visual-regression and accessibility suites (87 tests), tiered CI, a published report with trend history, and flake handling are in place.** Still to come: the PR coverage-gap tool. The `ui-mocked` project (29 tests) covers the main failure paths of the feed, article, sign-in, editor, settings and profile pages; what it doesn't cover is listed in the [test strategy](docs/test-strategy.md).
+**Status: functional, visual-regression and accessibility suites (101 tests), tiered CI, a published report with trend history, and flake handling are in place.** Still to come: the PR coverage-gap tool. The `ui-mocked` project (43 tests) covers the failure paths of every page; what it doesn't cover is listed in the [test strategy](docs/test-strategy.md).
 
 - **Live report:** <https://lodmaome.github.io/realworld-conduit-playwright/> (Allure, with trends)
 - **Flake dashboard:** <https://lodmaome.github.io/realworld-conduit-playwright/flakes/> (published after each run on `main`)
