@@ -4,7 +4,7 @@ A Playwright + TypeScript test automation portfolio against the RealWorld
 ("Conduit" Medium-clone spec) app, self-hosted via Docker Compose so CI fully
 controls the test environment.
 
-**Status: functional, visual-regression and accessibility suites (65 tests), tiered CI, a published report with trend history, and flake handling are in place.** Still to come: the rest of the `ui-mocked` flows (login and session failures, edge-case payloads), and the PR coverage-gap tool.
+**Status: functional, visual-regression and accessibility suites (71 tests), tiered CI, a published report with trend history, and flake handling are in place.** Still to come: the PR coverage-gap tool. (The `ui-mocked` project covers the home feed, the article page and sign-in/session failures; failures on the editor, settings and profile pages are not covered.)
 
 - **Live report:** <https://lodmaome.github.io/realworld-conduit-playwright/> (Allure, with trends)
 - **Flake dashboard:** <https://lodmaome.github.io/realworld-conduit-playwright/flakes/> (published after each run on `main`)

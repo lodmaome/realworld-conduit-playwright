@@ -28,7 +28,7 @@ everything else:
 | `ui`        | User journeys end to end: auth, articles, comments, favorites, feed and pagination, profile and follow, settings | Real backend, set up through the API | Runner                  | 37    |
 | `visual`    | The pages look the same: a screenshot per scene at zero pixel tolerance                                          | Fixed stubs                          | Pinned Playwright image | 10    |
 | `a11y`      | No new accessibility violations (axe, WCAG 2.0/2.1 A and AA), and none silently fixed                            | Fixed stubs                          | Runner                  | 10    |
-| `ui-mocked` | UI behaviour the real backend can't easily produce (errors, edge payloads)                                       | Route interception                   | Runner                  | 7     |
+| `ui-mocked` | UI behaviour the real backend can't easily produce (errors, edge payloads)                                       | Route interception                   | Runner                  | 13    |
 
 The visual and a11y suites share one list of ten "scenes" (a page in a state), so they can't drift
 apart on coverage. Both render from stubs typed from the OpenAPI schema, with external fonts and
@@ -89,13 +89,14 @@ Stated plainly, because a strategy that hides its gaps isn't one.
   assume, beyond types generated from its spec.
 - **Screenshots aren't production-faithful.** With the external stylesheets blocked, text is the
   image's fallback fonts and icon glyphs are absent, so an icon-font regression isn't caught.
-- **`ui-mocked` is partly built.** It covers the home feed and the article page (loading, empty,
-  and failed requests; rejected and failed comments). Login and session failures, and edge-case
-  payloads, are not covered yet. Three of its tests pin frontend behaviour that a user would call
-  a defect (no error state for a failed feed or an unknown article), asserted as observed and
-  labelled `known-issue`; since they assert that something did not happen, and the app gives no
-  signal to wait on, they narrow that window rather than close it
-  ([0013](adr/0013-api-overrides-for-the-mocked-ui-project.md)).
+- **`ui-mocked` covers three areas, not the whole app.** The home feed, the article page (loading,
+  empty and failed requests, rejected and failed comments, hostile and very long content), and
+  sign-in and session failures. The editor, settings, profile, favorite/follow and pagination
+  failures are not covered. Five of its tests pin frontend behaviour that a user would call a
+  defect (no error state for a failed feed, an unknown article or failed comments, and a long
+  unbroken word widening the page), asserted as observed and labelled `known-issue`. Four of those
+  assert that something did not happen, and the app gives no signal to wait on, so they narrow that
+  window rather than close it ([0013](adr/0013-api-overrides-for-the-mocked-ui-project.md)).
 - **Accessibility is the machine-checkable subset.** No keyboard, focus-order or screen-reader
   testing, and placeholder-only form fields pass because axe accepts a placeholder as a name.
 - **The flake budget sees only `main`**, and no real flake has yet occurred to exercise the

@@ -29,6 +29,7 @@ the article page renders two empty `.error-messages` lists until something fails
 ## Pinned frontend gaps
 
 A spec marked `known-issue` asserts something the frontend does that a user would call a defect
-(for example, a failed feed request leaving the page on "Loading articles..."). It is a
+(for example, a failed feed request leaving the page on "Loading articles...", or an unbroken
+long word widening the page). It is a
 regression check, and it is meant to fail when the frontend gains the missing behaviour — at
 which point rewrite it to assert the new behaviour. Each carries the date it was observed.

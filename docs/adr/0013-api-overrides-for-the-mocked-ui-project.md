@@ -44,10 +44,27 @@ frontend gains an error state. Observed on 2026-09-25:
 - A failed home-feed request (a `500`, or a dropped connection) leaves the page on
   "Loading articles..." indefinitely: no error, no articles.
 - An unknown article (`404`) renders a blank page: no title, no body, no message.
+- The article and its comments load together, so when only the comments request fails (`500`) the
+  article, which loaded fine, is not shown either.
+- A single unbroken run of characters in an article body (a long URL, a hash) is not wrapped and
+  widens the page: 400 characters gave a 5826px-wide page against 1280px. The same 400 characters
+  split by spaces, and ordinary long text, did not (isolated one variable at a time, with a
+  control, rather than assumed from a payload that changed several things at once).
 
-Comment failures were checked too, and behave correctly: a rejected comment (`422`) shows the
-server's message and keeps the typed text, and a failed comment delete (`500`) shows the error and
-keeps the comment.
+Other flows were checked too and behave correctly, so their tests assert the good behaviour and are
+not labelled `known-issue`:
+
+- A rejected comment (`422`) shows the server's message and keeps the typed text; a failed comment
+  delete (`500`) shows the error and keeps the comment.
+- A rejected sign-in (`422`) shows the server's message, stays on `/login` and keeps the email.
+- A stored token the API rejects (`401` on `GET /user`) signs the visitor out: the header shows
+  Sign in/Sign up, the auth state is `unauthenticated`, the token is removed from `localStorage`,
+  and the feed still renders.
+- Markup in an article is inert: a `<script>` never runs, an `onerror` handler is dropped, a
+  `javascript:` link is rewritten to an `unsafe:` one, and a title containing `<b>` is shown as
+  literal text. (An `<img>` and an `<i>` written in the body do render as elements, so raw HTML is
+  allowed through the sanitizer, minus anything executable.) This is asserted as a rendering check
+  on an edge-case payload, not as a security scan, which is out of scope for v1.
 
 ## Evidence
 
@@ -68,8 +85,16 @@ probes got wrong are worth keeping:
   visibility check for that one click, and says so where it does it; the comment being visible
   before and after is asserted.
 
-A mutation check covered the pinned-gap specs: with the feed request made to succeed, "stays on
-the loading message" fails, so the assertion is sensitive to the failure it describes.
+Mutation checks covered the specs that assert something did _not_ happen. Each was run, failed as
+expected, and was restored:
+
+- Home feed: with the failing feed request made to succeed, "stays on the loading message" fails.
+- Comments: with the failing comments request made to succeed, "renders nothing, not even the
+  article" fails.
+- Stale token: with the `401` override removed, the visitor stays signed in and the test fails.
+- Inert markup: the inline-handler check was pointed at `src` instead of `on*` and failed, which
+  shows it reaches the `<img>` it is meant to inspect; a `__pwned` global planted before the page
+  loaded made the final check fail, which shows it can see a real one.
 
 ## Consequences
 
@@ -82,7 +107,7 @@ the loading message" fails, so the assertion is sensitive to the failure it desc
 
 **Negative**
 
-- **The pinned-gap tests assert a negative** (no error shown, nothing rendered). The frontend
+- **Most pinned-gap tests assert a negative** (no error shown, nothing rendered). The frontend
   exposes no hook for feed or article state, only auth, so there is nothing to wait for. The specs
   wait for the request to end and for two animation frames (`tests/support/app-settled.ts`), which
   narrows the window in which the assertion could pass too early without closing it. The mutation
