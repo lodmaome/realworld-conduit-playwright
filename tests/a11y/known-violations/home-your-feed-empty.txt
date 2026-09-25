@@ -1,0 +1,3 @@
+color-contrast (serious) x8
+html-has-lang (serious) x1
+image-alt (critical) x1

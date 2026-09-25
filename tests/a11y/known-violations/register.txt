@@ -1,0 +1,2 @@
+color-contrast (serious) x5
+html-has-lang (serious) x1

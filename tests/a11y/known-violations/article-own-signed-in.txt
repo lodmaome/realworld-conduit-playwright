@@ -1,0 +1,4 @@
+color-contrast (serious) x14
+html-has-lang (serious) x1
+image-alt (critical) x4
+link-name (serious) x2
