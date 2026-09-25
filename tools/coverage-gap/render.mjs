@@ -6,15 +6,23 @@ import { byKey } from './diff.mjs';
 /** @typedef {import('./manifest.mjs').Operation} Operation */
 /** @typedef {import('./diff.mjs').ContractDiff} ContractDiff */
 /** @typedef {import('./analysis.mjs').Analysis} Analysis */
+/** @typedef {import('./analysis.mjs').OperationCoverage} OperationCoverage */
 
 const LABEL = {
   covered: 'covered',
+  'only-setup': 'only used to set up',
   'only-stubbed': 'only stubbed',
   gap: 'no test reaches it',
 };
 
 const cell = (/** @type {string} */ text) => text.replace(/\|/g, '\\|');
 const code = (/** @type {string} */ text) => `\`${cell(text)}\``;
+const listOf = (/** @type {Operation[]} */ operations) =>
+  operations.map((op) => code(op.key)).join(', ');
+
+/** @param {Analysis} analysis @param {Operation} operation @returns {OperationCoverage} */
+const coverageOf = (analysis, operation) =>
+  /** @type {OperationCoverage} */ (analysis.coverage.get(operation.key));
 
 /**
  * @param {Operation[]} operations
@@ -22,25 +30,29 @@ const code = (/** @type {string} */ text) => `\`${cell(text)}\``;
  * @param {(operation: Operation) => string} [note]
  */
 function table(operations, analysis, note) {
-  const rows = operations.map((operation) => {
-    const entry = /** @type {NonNullable<ReturnType<typeof analysis.coverage.get>>} */ (
-      analysis.coverage.get(operation.key)
-    );
-    const status = LABEL[statusOf(entry)];
-    const reached = entry.real > 0 ? `${entry.real} (${entry.via.join(', ')})` : '0';
-    return [
-      code(operation.key),
-      note ? note(operation) : '',
-      reached,
-      String(entry.stubbed),
-      status,
-    ];
-  });
-  const header = note
-    ? ['Endpoint', 'Change', 'Real tests', 'Stubbed tests', 'Status']
-    : ['Endpoint', '', 'Real tests', 'Stubbed tests', 'Status'];
+  const header = [
+    'Endpoint',
+    note ? 'Change' : '',
+    'Driven by tests',
+    'Set-up only',
+    'Stubbed',
+    'Status',
+  ];
   const lines = [`| ${header.join(' | ')} |`, `| ${header.map(() => '---').join(' | ')} |`];
-  for (const row of rows) lines.push(`| ${row.join(' | ')} |`);
+  for (const operation of operations) {
+    const entry = coverageOf(analysis, operation);
+    const via = entry.via.length > 0 ? ` (${entry.via.join(', ')})` : '';
+    lines.push(
+      `| ${[
+        code(operation.key),
+        note ? note(operation) : '',
+        entry.driven > 0 ? `${entry.driven}${via}` : '0',
+        String(entry.real - entry.driven),
+        String(entry.stubbed),
+        LABEL[statusOf(entry)],
+      ].join(' | ')} |`,
+    );
+  }
   return lines.join('\n');
 }
 
@@ -51,7 +63,7 @@ function table(operations, analysis, note) {
  * @param {{ from: string, to: string } | undefined} input.pinChange  The backend pin, if it moved.
  * @param {boolean} input.schemaChanged  Whether `schema.d.ts` differs at all.
  * @param {string} input.base
- * @returns {{ markdown: string, gaps: Operation[], weak: Operation[], warnings: string[] }}
+ * @returns {{ markdown: string, gaps: Operation[], setupOnly: Operation[], stubbedOnly: Operation[], warnings: string[] }}
  */
 export function renderChangeReport({ diff, analysis, pinChange, schemaChanged, base }) {
   const changed = [...diff.added, ...diff.changed].sort(byKey);
@@ -59,14 +71,11 @@ export function renderChangeReport({ diff, analysis, pinChange, schemaChanged, b
     ...diff.added.map((op) => /** @type {const} */ ([op.key, 'added'])),
     ...diff.changed.map((op) => /** @type {const} */ ([op.key, 'changed'])),
   ]);
-  const statusFor = (/** @type {Operation} */ op) =>
-    statusOf(
-      /** @type {NonNullable<ReturnType<typeof analysis.coverage.get>>} */ (
-        analysis.coverage.get(op.key)
-      ),
-    );
-  const gaps = changed.filter((op) => statusFor(op) === 'gap');
-  const weak = changed.filter((op) => statusFor(op) === 'only-stubbed');
+  const withStatus = (/** @type {import('./analysis.mjs').CoverageStatus} */ status) =>
+    changed.filter((op) => statusOf(coverageOf(analysis, op)) === status);
+  const gaps = withStatus('gap');
+  const setupOnly = withStatus('only-setup');
+  const stubbedOnly = withStatus('only-stubbed');
 
   /** @type {string[]} */
   const warnings = [];
@@ -100,35 +109,40 @@ export function renderChangeReport({ diff, analysis, pinChange, schemaChanged, b
       );
       if (gaps.length > 0) {
         out.push(
-          `**${gaps.length} changed endpoint(s) are not reached by any test**: ` +
-            `${gaps.map((op) => code(op.key)).join(', ')}.`,
+          `**${gaps.length} changed endpoint(s) are not reached by any test**: ${listOf(gaps)}.`,
           '',
         );
       }
-      if (weak.length > 0) {
+      if (setupOnly.length > 0) {
         out.push(
-          `${weak.length} are reached only by stubbed tests, which say nothing about the backend: ` +
-            `${weak.map((op) => code(op.key)).join(', ')}.`,
+          `${setupOnly.length} are reached by real tests only to set data up, never driven by a ` +
+            `test of their own: ${listOf(setupOnly)}.`,
           '',
         );
       }
-      if (gaps.length === 0 && weak.length === 0) {
+      if (stubbedOnly.length > 0) {
         out.push(
-          'Every added or changed endpoint is reached by at least one real-backend test.',
+          `${stubbedOnly.length} are reached only by stubbed tests, which say nothing about the ` +
+            `backend: ${listOf(stubbedOnly)}.`,
+          '',
+        );
+      }
+      if (gaps.length + setupOnly.length + stubbedOnly.length === 0) {
+        out.push(
+          'Every added or changed endpoint is driven by at least one real-backend test.',
           '',
         );
       }
     }
     if (diff.removed.length > 0) {
       out.push(
-        `Removed: ${diff.removed.map((op) => code(op.key)).join(', ')}. Tests that still call ` +
-          'these will fail on their own.',
+        `Removed: ${listOf(diff.removed)}. Tests that still call these will fail on their own.`,
         '',
       );
     }
   }
   out.push(footnote(analysis));
-  return { markdown: out.join('\n'), gaps, weak, warnings };
+  return { markdown: out.join('\n'), gaps, setupOnly, stubbedOnly, warnings };
 }
 
 /**
@@ -138,18 +152,11 @@ export function renderChangeReport({ diff, analysis, pinChange, schemaChanged, b
  */
 export function renderFullReport(operations, analysis) {
   const all = [...operations.values()].sort(byKey);
-  const unreached = all.filter(
-    (op) =>
-      statusOf(
-        /** @type {NonNullable<ReturnType<typeof analysis.coverage.get>>} */ (
-          analysis.coverage.get(op.key)
-        ),
-      ) !== 'covered',
-  );
+  const driven = all.filter((op) => statusOf(coverageOf(analysis, op)) === 'covered').length;
   return [
     '## API coverage, whole suite',
     '',
-    `${all.length - unreached.length} of ${all.length} endpoints are reached by a real-backend test.`,
+    `${driven} of ${all.length} endpoints are driven by a real-backend test.`,
     '',
     table(all, analysis),
     '',
@@ -161,8 +168,9 @@ export function renderFullReport(operations, analysis) {
 function footnote(analysis) {
   const lines = [
     `Read from ${analysis.passedTests} passing test attempts (${analysis.passedRealTests} against ` +
-      'the real backend). "Reached" means a test sent a request to the endpoint, not that it ' +
-      'asserted on the answer: an endpoint used only to set data up is reached too.',
+      'the real backend). "Driven" means a test itself sent a request to the endpoint; "set-up ' +
+      'only" means fixtures did, to prepare a test. Neither means the test asserted on the ' +
+      'answer: a test can drive an endpoint and check nothing about it.',
   ];
   if (analysis.unmatched.length > 0) {
     lines.push(

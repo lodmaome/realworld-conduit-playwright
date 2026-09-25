@@ -94,3 +94,89 @@ describe('analyse', () => {
     assert.equal(analysis.passedRealTests, 1);
   });
 });
+
+describe('driven versus set-up', () => {
+  const via = (/** @type {'browser' | 'apiClient'} */ channel, extra = {}) => ({
+    method: 'GET',
+    pathname: '/api/things',
+    via: channel,
+    ...extra,
+  });
+  const entryFor = (
+    /** @type {import('./analysis.mjs').HitRecord[]} */ records,
+    /** @type {string[] | undefined} */ apiProjects = undefined,
+  ) =>
+    /** @type {import('./analysis.mjs').OperationCoverage} */ (
+      analyse({ operations, records, realProjects: ['api', 'ui'], apiProjects }).coverage.get(
+        'GET /api/things',
+      )
+    );
+
+  it('counts a request the browser sent as driven', () => {
+    const entry = entryFor([record({ hits: [via('browser')] })]);
+    assert.equal(entry.driven, 1);
+    assert.equal(statusOf(entry), 'covered');
+  });
+
+  it('counts the API client in the api project as driven', () => {
+    const entry = entryFor([record({ project: 'api', hits: [via('apiClient')] })]);
+    assert.equal(entry.driven, 1);
+    assert.equal(statusOf(entry), 'covered');
+  });
+
+  it('counts the API client in a UI project as set-up: the UI is what that test drives', () => {
+    const entry = entryFor([record({ project: 'ui', hits: [via('apiClient')] })]);
+    assert.equal(entry.real, 1);
+    assert.equal(entry.driven, 0);
+    assert.equal(statusOf(entry), 'only-setup');
+  });
+
+  it('counts a request the recorder flagged as set-up as set-up, even in the api project', () => {
+    const entry = entryFor([record({ project: 'api', hits: [via('apiClient', { setup: true })] })]);
+    assert.equal(entry.driven, 0);
+    assert.equal(statusOf(entry), 'only-setup');
+  });
+
+  it('counts the browser traffic of an auth bootstrap as set-up', () => {
+    const entry = entryFor([record({ hits: [via('browser', { setup: true })] })]);
+    assert.equal(statusOf(entry), 'only-setup');
+  });
+
+  it('is covered as soon as any one test drives it, however many only set it up', () => {
+    const entry = entryFor([
+      record({ testId: 'a', project: 'ui', hits: [via('apiClient')] }),
+      record({ testId: 'b', project: 'ui', hits: [via('apiClient', { setup: true })] }),
+      record({ testId: 'c', project: 'ui', hits: [via('browser')] }),
+    ]);
+    assert.equal(entry.real, 3);
+    assert.equal(entry.driven, 1);
+    assert.equal(statusOf(entry), 'covered');
+  });
+
+  it('counts a test that both drives and sets up an endpoint as driving it', () => {
+    const entry = entryFor([
+      record({ project: 'api', hits: [via('apiClient', { setup: true }), via('apiClient')] }),
+    ]);
+    assert.equal(entry.driven, 1);
+  });
+
+  it('takes the projects whose API client is the subject from the caller', () => {
+    const records = [record({ project: 'ui', hits: [via('apiClient')] })];
+    assert.equal(statusOf(entryFor(records, ['ui'])), 'covered');
+    assert.equal(statusOf(entryFor(records, ['api'])), 'only-setup');
+  });
+
+  it('shows the tests that drive an endpoint as its examples, not the ones that set it up', () => {
+    const entry = entryFor([
+      record({ testId: 'a', title: 'drives it', hits: [via('browser')] }),
+      record({ testId: 'b', title: 'sets it up', project: 'ui', hits: [via('apiClient')] }),
+    ]);
+    assert.deepEqual(entry.examples, ['drives it']);
+  });
+
+  it('never counts a stubbed test as driving anything', () => {
+    const entry = entryFor([record({ project: 'ui-mocked', hits: [via('browser')] })]);
+    assert.equal(entry.driven, 0);
+    assert.equal(statusOf(entry), 'only-stubbed');
+  });
+});

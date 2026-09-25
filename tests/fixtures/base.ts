@@ -4,6 +4,8 @@ import { createArticle, type NewArticleOverrides } from '@factories/article-fact
 import { createUser, type CreatedUser, type NewUserOverrides } from '@factories/user-factory';
 import { installApiMock, type ApiMockConfig } from '../support/api-mock';
 import {
+  asBrowserSetup,
+  asSetup,
   recordingDir,
   trackApiHits,
   trackBrowserHits,
@@ -85,11 +87,13 @@ export const test = base.extend<Fixtures>({
   // Exposes a creator function, not a single instance, so a test can make more than
   // one user (e.g. to test following/favoriting between two accounts).
   userFactory: async ({ apiClient }, use) => {
-    await use((overrides) => createUser(apiClient, overrides));
+    await use((overrides) => asSetup(() => createUser(apiClient, overrides)));
   },
 
   articleFactory: async ({ apiClient }, use) => {
-    await use((author, overrides) => createArticle(apiClient, author.token, overrides));
+    await use((author, overrides) =>
+      asSetup(() => createArticle(apiClient, author.token, overrides)),
+    );
   },
 
   authenticatedUser: async ({ userFactory }, use) => {
@@ -105,14 +109,19 @@ export const test = base.extend<Fixtures>({
   // Seeds once, not on every navigation: an init script re-runs for each new document,
   // so without the marker a logout followed by a full page load would silently log the
   // user straight back in.
-  authenticatedPage: async ({ page, authenticatedUser }, use) => {
+  authenticatedPage: async ({ page, authenticatedUser, endpointHits }, use) => {
     await page.addInitScript((token) => {
       if (window.localStorage.getItem('pw-token-seeded')) return;
       window.localStorage.setItem('jwtToken', token);
       window.localStorage.setItem('pw-token-seeded', '1');
     }, authenticatedUser.token);
-    await page.goto('/');
-    await page.waitForFunction(() => window.__conduit_debug__?.getAuthState() === 'authenticated');
+    // The app's own bootstrap requests here prepare the test; they are not what it drives.
+    await asBrowserSetup(endpointHits, async () => {
+      await page.goto('/');
+      await page.waitForFunction(
+        () => window.__conduit_debug__?.getAuthState() === 'authenticated',
+      );
+    });
     await use(page);
   },
 

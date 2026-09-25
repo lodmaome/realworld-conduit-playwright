@@ -28,6 +28,8 @@ const { values } = parseArgs({
     all: { type: 'boolean', default: false },
     hits: { type: 'string', default: 'endpoint-hits' },
     'real-projects': { type: 'string', default: 'api,ui' },
+    // Projects whose direct API-client calls are the subject under test, not set-up.
+    'api-projects': { type: 'string', default: 'api' },
     'fail-on-gap': { type: 'boolean', default: false },
     summary: { type: 'string', default: process.env.GITHUB_STEP_SUMMARY },
   },
@@ -66,6 +68,7 @@ const analysis = analyse({
   operations: headSchema,
   records,
   realProjects: /** @type {string} */ (values['real-projects']).split(','),
+  apiProjects: /** @type {string} */ (values['api-projects']).split(','),
 });
 // A recorder that silently recorded nothing would report every endpoint as a gap, or none.
 if (analysis.passedRealTests === 0) {
@@ -102,7 +105,12 @@ if (values.all) {
       `::warning title=Endpoint not reached by any test::${operation.key} changed and no test reaches it`,
     );
   }
-  for (const operation of report.weak) {
+  for (const operation of report.setupOnly) {
+    console.log(
+      `::warning title=Endpoint only used to set up::${operation.key} changed and no test drives it, real tests only use it to prepare data`,
+    );
+  }
+  for (const operation of report.stubbedOnly) {
     console.log(
       `::warning title=Endpoint only stubbed::${operation.key} changed and only stubbed tests send it`,
     );

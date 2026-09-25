@@ -28,6 +28,15 @@ const hit = (/** @type {string} */ method, /** @type {string} */ pathname, proje
   retry: 0,
   hits: [{ method, pathname, via: 'browser' }],
 });
+/** A UI test whose fixture, not the test, sent the request. */
+const setupHit = (/** @type {string} */ method, /** @type {string} */ pathname) => ({
+  project: 'ui',
+  testId: `setup-${method}-${pathname}`,
+  title: `set up ${method} ${pathname}`,
+  status: 'passed',
+  retry: 0,
+  hits: [{ method, pathname, via: 'apiClient' }],
+});
 const analysisOf = (/** @type {ReturnType<typeof hit>[]} */ records) =>
   analyse({ operations: head, records, realProjects: ['ui'] });
 
@@ -55,14 +64,37 @@ describe('renderChangeReport', () => {
     );
     const report = render(records);
     assert.deepEqual(report.gaps, []);
-    assert.ok(report.markdown.includes('Every added or changed endpoint is reached'));
+    assert.ok(report.markdown.includes('Every added or changed endpoint is driven'));
   });
 
   it('separates an endpoint only stubs reach from one nothing reaches', () => {
     const report = render([hit('GET', '/api/owners', 'ui-mocked'), hit('GET', '/api/things')]);
-    assert.ok(report.weak.some((op) => op.key === 'GET /api/owners'));
+    assert.ok(report.stubbedOnly.some((op) => op.key === 'GET /api/owners'));
     assert.ok(!report.gaps.some((op) => op.key === 'GET /api/owners'));
     assert.ok(report.markdown.includes('only by stubbed tests'));
+  });
+
+  it('separates an endpoint only used to set up from one a test drives, and from a gap', () => {
+    const report = render([hit('GET', '/api/things'), setupHit('GET', '/api/owners')]);
+    assert.ok(report.setupOnly.some((op) => op.key === 'GET /api/owners'));
+    assert.ok(!report.gaps.some((op) => op.key === 'GET /api/owners'));
+    assert.ok(report.markdown.includes('only to set data up'));
+    assert.ok(report.markdown.includes('only used to set up'));
+  });
+
+  it('does not say every endpoint is driven while one is only set up', () => {
+    const records = [...diff.added, ...diff.changed].map((op) =>
+      setupHit(op.method, op.path.replace('{id}', '1').replace('{slug}', 's')),
+    );
+    const report = render(records);
+    assert.deepEqual(report.gaps, []);
+    assert.ok(!report.markdown.includes('Every added or changed endpoint is driven'));
+  });
+
+  it('shows how many tests drive an endpoint and how many only set it up', () => {
+    const report = render([hit('GET', '/api/things'), setupHit('GET', '/api/things')]);
+    assert.ok(report.markdown.includes('Driven by tests'));
+    assert.ok(report.markdown.includes('Set-up only'));
   });
 
   it('lists removed endpoints without calling them gaps', () => {
@@ -94,7 +126,7 @@ describe('renderChangeReport', () => {
   });
 
   it('always says what "reached" means', () => {
-    assert.ok(render([hit('GET', '/api/things')]).markdown.includes('not that it asserted'));
+    assert.ok(render([hit('GET', '/api/things')]).markdown.includes('asserted on the answer'));
   });
 
   it('escapes table separators in endpoint names', () => {
@@ -103,8 +135,13 @@ describe('renderChangeReport', () => {
 });
 
 describe('renderFullReport', () => {
-  it('summarises how many endpoints are reached', () => {
+  it('does not count an endpoint that is only set up as driven', () => {
+    const markdown = renderFullReport(head, analysisOf([setupHit('GET', '/api/things')]));
+    assert.ok(markdown.includes(`0 of ${head.size} endpoints are driven`));
+  });
+
+  it('summarises how many endpoints a test drives', () => {
     const markdown = renderFullReport(head, analysisOf([hit('GET', '/api/things')]));
-    assert.ok(markdown.includes(`1 of ${head.size} endpoints are reached`));
+    assert.ok(markdown.includes(`1 of ${head.size} endpoints are driven`));
   });
 });
