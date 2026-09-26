@@ -90,13 +90,21 @@ Measured 2026-09-26 on a 20-core Windows machine against the running stack.
 - **`check:tags` counts every copy.** The 10 distinct smoke tests read as "28 @smoke" (10 in Chromium
   plus 9 in each of two engines), because the listing counts each project's run.
 - **The worker cap is a finding about one machine.** CI's default is 2 workers, so it was probably not
-  affected, and the cap makes that deterministic; the number was not measured on a CI runner.
+  affected, and the cap makes that deterministic; the repeated measurements were local, and the CI
+  runner has one passing run.
 - **Two more browsers to keep current:** a Playwright bump needs new builds of both.
 
-**Not yet verified**
+**Verified on CI, and what that does not show**
 
-- A run on Linux CI (`ubuntu-24.04`, with the system dependencies installed by
-  `playwright install --with-deps`). At the time of writing the change has run only locally.
+- **On Linux (`ubuntu-24.04`), 2026-09-26.** A push to `main` stayed Chromium-only (191 tests, and the
+  "Install Firefox and WebKit" step skipped). A full-tier dispatch
+  ([36212302862](https://github.com/lodmaome/realworld-conduit-playwright/actions/runs/36212302862))
+  installed both engines with `playwright install --with-deps`, ran the cross-browser smoke, and passed:
+  191 regression, 10 a11y, 10 visual and **18 cross-browser tests in 26.5 seconds at 2 workers**, 229 in
+  all. The flake history recorded 229 passed and 0 flaky, and the budget was OK.
+- **It is one run.** It shows the setup works on the runner, not that Firefox and WebKit are stable
+  there; the repeated measurements above were taken locally. The flake budget will show that over the
+  nightly runs.
 
 ## Alternatives considered
 
