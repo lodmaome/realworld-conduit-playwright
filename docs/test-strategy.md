@@ -139,8 +139,12 @@ Stated plainly, because a strategy that hides its gaps isn't one.
   contract alone is invisible); and the per-endpoint test counts are approximate for requests a page
   fires on load, so the status is the part to trust
   ([0014](adr/0014-pr-coverage-gap-flagger.md)).
-- **The flake budget sees only `main`**, and no real flake has yet occurred to exercise the
-  dashboard on live data.
+- **The flake budget sees only `main`**, enforced: the report job publishes to the real history
+  only from `main`, and other branches can only rehearse into a `gh-pages-<name>` branch. The
+  flake tooling has been rehearsed on real CI runs with a deliberate flake (retry reporting, history,
+  the watch notice, the budget failure, quarantine, the dashboard), but not with a real, unplanned
+  one, the job-summary block has not been seen rendered, and the release-candidate state has only
+  run locally ([0012](adr/0012-flake-handling.md)).
 - **Out of scope for v1**, deliberately: mutation testing, security scanning, performance and load,
   cross-browser and mobile.
 

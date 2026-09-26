@@ -100,8 +100,9 @@ not been seen rendered, and no real flake has occurred, so the live dashboard wi
 
 **Negative**
 
-- **The budget only sees runs of `main`.** Pull-request runs don't enter history, so a flake that
-  only ever happens on a PR is shown in that run's summary but never counted.
+- **The budget only sees runs of `main`** (enforced since the amendment below). Pull-request runs
+  don't enter history, so a flake that only ever happens on a PR is shown in that run's summary but
+  never counted.
 - **Renaming a test resets its history**, because the id includes its title.
 - **An expired quarantine fails the static job for everyone**, including unrelated pull requests,
   from the day after it lapses. That pressure is the point; extending one is a reviewed change to
@@ -124,3 +125,52 @@ not been seen rendered, and no real flake has occurred, so the live dashboard wi
 - **Allure's flaky detection** — insufficient, as in Context: not retry-based, and no rate over time.
 - **A hosted flake-tracking service** — out of scope for a self-contained repository, and it would
   move the data off a page we control.
+
+## Amendment, 2026-09-25: rehearsed on real CI runs, and the "only `main`" guarantee made true
+
+The original text said the budget sees only runs of `main`. The rehearsal below found that was not
+enforced: the history and budget count every entry, and the report job ran for a manual dispatch on
+**any** branch and published to the real `gh-pages`, so a dispatch on a feature branch would have
+entered the real history and could have tripped the budget. Only pull requests were excluded.
+
+**What changed.**
+
+- The report job now runs only on the default branch, or for a dispatch that names a **rehearsal
+  branch** through a new `publish_branch` input. A dispatch on any other branch with the default
+  input publishes nothing.
+- The publisher force-pushes, so `tools/ci/publish-branch.mjs` allows only `gh-pages` or
+  `gh-pages-<something>`, in code, with unit tests. `main`, `master`, path-like names and shell
+  metacharacters are refused, and the publisher was checked to exit 1 with a clear message.
+- A rehearsal branch runs the whole publish path (report, history, dashboard, budget) with nothing
+  written to the real history. It is not served by Pages.
+
+**The rehearsal** used a deterministic flaky test (fails on its first attempt, passes on the retry)
+on a throwaway branch, dispatched five times on 2026-09-25, publishing to `gh-pages-rehearsal`.
+The real `gh-pages` stayed at commit `8d5f88df53` throughout (checked before and after), and both
+throwaway branches were deleted afterwards.
+
+| Run             | What it did                                 | Result                                                                                                  |
+| --------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| 0 (36204725698) | Smoke, default `publish_branch`, off `main` | Tests green (the flaky test passed on retry), **publish job skipped**, real history untouched           |
+| 1 (36204863824) | Smoke, rehearsal branch, first publish      | Branch created, "1 flaky of 11 executed", budget OK                                                     |
+| 2 (36205018393) | Smoke, rehearsal branch                     | History read back (1 to 2 runs), **"Flaky test to watch" notice** (2 of 2), run green                   |
+| 3 (36205188187) | Smoke, rehearsal branch                     | **"Check the flake budget" failed the run**, "Over the flake budget", 3 of 3; the test job stayed green |
+| 4 (36205385927) | Full tier, the test now quarantined         | Green; the quarantine step ran it non-blocking; budget OK; "0 flaky of 211 executed" (recorded apart)   |
+
+Each annotation (the flaky-test warning, the watch notice, the budget error) was read back from the
+check run through the API. The dashboard published by the rehearsal was fetched from the branch and
+checked: no scripts, **zero network requests**, and **no axe violations in the light or dark scheme**,
+in the over-budget state and, after run 4, the quarantined one ("No tests over the flake budget",
+"Quarantined 1", the test's status `quarantined`, its expiry, reason and streak).
+
+**Still not verified.**
+
+- **How the job summary renders.** The step writes the markdown to `GITHUB_STEP_SUMMARY` (checked in
+  the code) and the same text appears in the raw job log, but a signed-out view of the run page shows
+  the annotations and artifacts and no summary section, and no credentials were used to look further.
+  Someone signed in should look at one rehearsal-style run page once.
+- **The release-candidate state on live data.** It needs a quarantined test to pass seven
+  observations in a row (the nightly tier), which the rehearsal could not reach in five runs. It is
+  covered by unit tests and a local run, not by a real run.
+- **A real, unplanned flake.** The rehearsal used a flake made on purpose. What the budget does with
+  the flakes a real suite produces over months is still untested.

@@ -123,6 +123,22 @@ over the budget again, which is the point.
 The run fails with `Over the flake budget`, naming the test. The dashboard shows how often it
 flaked and the first error of the latest flake. Either fix the cause, or quarantine it as above.
 
+### Rehearsing the publish path
+
+To try the report, flake history, dashboard or budget without touching the real history, dispatch the
+workflow on any branch with `publish_branch` set to a rehearsal branch:
+
+```bash
+gh workflow run ci.yml --ref <your-branch> -f tier=smoke -f publish_branch=gh-pages-rehearsal
+```
+
+The publisher writes to that branch (created on the first run) and the real `gh-pages` is not
+touched. A dispatch on a branch other than `main` with the default `publish_branch` publishes
+nothing. Only `gh-pages` and `gh-pages-<name>` are accepted, because the publisher force-pushes.
+Rehearsal branches are not served by Pages: fetch `flakes/index.html` from the branch to look at the
+dashboard. When you are done, delete the rehearsal branch. See the amendment to
+[ADR-0012](adr/0012-flake-handling.md) for a worked example (a test that flakes on purpose).
+
 ## When something breaks
 
 | Symptom                                                            | Cause and fix                                                                                                                                       |
