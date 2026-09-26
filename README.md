@@ -30,6 +30,32 @@ controls the test environment.
 - **[How this was built](docs/how-this-was-built.md)** — the AI-assisted process, who did what, and how it was checked
 - **[Architecture decisions](docs/adr/README.md)** — read before changing anything that would contradict them
 - **[Maintenance runbook](docs/maintenance.md)** — bumping pins, quarantining a test, troubleshooting
+- **[Future work](docs/future-work.md)** — what was left out on purpose (mutation testing, security scanning) and what would come next
+
+## Where to look first
+
+**With five minutes**
+
+1. **[Findings](docs/findings.md)**: what the suite found in the app, with a reproduction for each. Four were
+   reported upstream (`realworld-apps/aspnetcore-realworld-example-app` #141 to #144).
+2. **[Test strategy](docs/test-strategy.md)**: the whole picture on one page: the suites, the tiers, what is
+   deliberately not done, and the known limits, stated plainly.
+3. **[The live report](https://lodmaome.github.io/realworld-conduit-playwright/)** and the
+   **[flake dashboard](https://lodmaome.github.io/realworld-conduit-playwright/flakes/)**: from real CI runs.
+
+**With twenty more minutes**
+
+- **Reasoning, with evidence:** [ADR-0009](docs/adr/0009-visual-regression-in-a-pinned-image.md) (why visual
+  tests run in a pinned image), [ADR-0012](docs/adr/0012-flake-handling.md) (retries that report, a budget,
+  a rehearsal on real CI) and [ADR-0015](docs/adr/0015-validate-responses-against-the-contract.md) (validating
+  responses against a spec that turned out to be thin).
+- **The code that shows the design:** [`tests/fixtures/base.ts`](tests/fixtures/base.ts) (custom fixtures, not just
+  page objects), [`tests/api/articles.spec.ts`](tests/api/articles.spec.ts) (API tests with contract checks and pinned
+  defects), [`tests/ui-mocked/`](tests/ui-mocked/README.md) (failure paths via stubs), and
+  [`tools/coverage-gap/`](tools/coverage-gap/README.md) (the PR coverage-gap flagger).
+- **Run it:** the [quick start](#quick-start) builds the app under Docker and runs the suite.
+- **How it was made:** built with AI assistance throughout, and [how that was directed and checked](docs/how-this-was-built.md)
+  is written down.
 
 ## Target application
 

@@ -101,6 +101,22 @@ bootstrap preparing it; an endpoint only used to set up, or only stubs reach, is
 ([0014](adr/0014-pr-coverage-gap-flagger.md)). It reports and does not block. Locally:
 `npm run coverage:record`, then `npm run coverage-gap -- --base origin/main` (or `--all`).
 
+## Non-goals
+
+Decided against, as opposed to a limitation (something wanted and not possible). The first two were
+excluded by the original brief; what each would take is in [future work](future-work.md).
+
+| Not done                                  | Why                                                                                                                                                        |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mutation testing                          | The code under test is upstream's and pinned; a mutant per Docker rebuild is hours for a signal that is mostly about code this repository doesn't own      |
+| Security scanning, or a security review   | A demo app it doesn't own, so findings would be upstream's. Authorisation and token behaviour are tested as functionality, and the findings page says so   |
+| Performance and load testing              | The app is a demo on SQLite in Docker on a shared CI runner; timings from it wouldn't mean anything, and load is a different question with different tools |
+| Cross-browser and mobile                  | Chromium only, by choice; the icon-glyph handling was verified only there. The hands-on portfolio covers cross-browser                                     |
+| Testing the app's own code                | No unit tests or code coverage of the backend or frontend: both are pinned upstream builds, tested through the UI and the API                              |
+| Running against a hosted third-party site | Controlling the environment is the point ([0002](adr/0002-pin-upstream-app-versions.md), [0005](adr/0005-frontend-custom-docker-build.md))                 |
+| Fixing the app's defects                  | Defects are reported ([findings](findings.md)), not patched: the app is pinned so that CI doesn't move under the tests                                     |
+| Being a framework others install          | It is a portfolio to read and run, not a published package                                                                                                 |
+
 ## Known limitations
 
 Stated plainly, because a strategy that hides its gaps isn't one.
@@ -145,9 +161,9 @@ Stated plainly, because a strategy that hides its gaps isn't one.
   the watch notice, the budget failure, quarantine, the dashboard), but not with a real, unplanned
   one, the job-summary block has not been seen rendered, and the release-candidate state has only
   run locally ([0012](adr/0012-flake-handling.md)).
-- **Out of scope for v1**, deliberately: mutation testing, security scanning, performance and load,
-  cross-browser and mobile.
 
 ## What is not built yet
 
-Nothing in the v1 scope. What was left out on purpose is listed under known limitations.
+Nothing in the v1 scope. What was left out on purpose is under [non-goals](#non-goals), what is
+possible but not done is under [known limitations](#known-limitations), and what would come next is in
+[future work](future-work.md).
