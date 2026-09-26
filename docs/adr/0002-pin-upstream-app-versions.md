@@ -50,3 +50,40 @@ explaining why), not something that happens automatically.
   for reasons entirely outside this repo, with no corresponding commit here to explain
   why. That's an unacceptable amount of noise for a portfolio project meant to
   demonstrate stability.
+
+## Amendment, 2026-09-26: the periodic check exists
+
+The Consequences above name two risks: drifting behind upstream fixes, and the pin becoming
+"accidentally permanent" for want of a periodic process. Until now that process was a note. It is a
+scheduled check now, and it keeps the decision above intact: it **reports and never bumps**.
+
+**What it does.** `.github/workflows/pin-drift.yml` runs weekly (Mondays, 06:00 UTC) and on demand,
+through `tools/ci/pin-drift.mjs`. For each pin it asks GitHub how far the upstream default branch has
+moved. A pin is flagged when upstream has commits it lacks **and the oldest of them is more than 30
+days old**, so new upstream commits aren't drift, but a month of ignoring them is. A pin whose commit
+upstream no longer has (force-pushed or deleted), or that is no longer an ancestor of the upstream
+tip, is flagged too. When a pin is flagged the workflow opens, or updates, one issue titled "Upstream
+pins have drifted" with the size of the gap, where the changes are (by directory), the newest commits
+and a compare link. When the pins are current again it closes that issue. A check that could not run
+(an API error, a rate limit) fails the run instead of reporting "no drift".
+
+**Measured, 2026-09-26.** Both pins are at their upstream tips today (the backend was bumped on
+2026-08-19, the frontend on 2026-05-13, and neither has commits since), so the live answer is "current".
+The other states were exercised against the real upstream API by pinning older commits: the backend
+three commits back was **3 commits behind, oldest 49 days: drifted**, and with a 60-day threshold the
+same pin was "behind, recently" and not flagged; the frontend three commits back was **135 days:
+drifted**; a commit upstream doesn't have was "not found upstream"; a malformed pin was refused.
+25 unit tests cover the states, the exactly-at-threshold boundary (30 days is not drift, 31 is), the
+oldest-commit rule, history rewritten, and the API failures. Three mutation checks (the boundary, the
+oldest-versus-newest rule, and ignoring a non-200 response) each failed the tests as they should; a
+first attempt at the third had not applied and was redone.
+
+**What I did not expect.** After many runs the tool hit GitHub's unauthenticated limit (60 requests an
+hour) and exited 2 with a clear message instead of reporting "no drift", which is the behaviour the
+workflow relies on. It uses the workflow's token, which raises the limit to 1,000 an hour.
+
+**What it still does not do.** It doesn't say whether the upstream changes matter to this suite: it
+lists where they are (`src/Conduit`, `tests/...`) and leaves the judgement to the reviewer who does
+the bump, following the [runbook](../maintenance.md). It watches the two app pins, not Playwright, Node
+or npm dependencies, which have their own checks. And it opens an issue in this repository, so it needs
+`issues: write`, granted to that workflow only.

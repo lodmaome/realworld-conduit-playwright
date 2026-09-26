@@ -63,7 +63,9 @@ Tests are selected by tier, not by tagging everything ([0008](adr/0008-test-tier
 tests) on pushes to `main`, **full** (adding a11y and visual) nightly and on demand. Each tier is
 an npm script, so a developer reproduces a CI run with the same command. Only `@smoke` and
 `@quarantine` are tags. A fast static job (types, lint, format, tag and quarantine rules, tool
-unit tests, image pin) runs alongside on every trigger.
+unit tests, image pin) runs alongside on every trigger. Separately, a weekly job reports when an
+upstream app pin has fallen behind for long enough to look at, and never bumps one
+([0002](adr/0002-pin-upstream-app-versions.md), amendment).
 
 ## Reliability
 

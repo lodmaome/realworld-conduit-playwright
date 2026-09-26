@@ -1,0 +1,90 @@
+name: Pin drift
+
+# Weekly check that the upstream app pins (docs/adr/0002-pin-upstream-app-versions.md) have not
+# fallen behind unnoticed. It only reports: it opens or updates one tracking issue when a pin has
+# drifted, and closes it when the pins are current again. It never changes a pin; a bump is a
+# reviewed change (docs/maintenance.md).
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      max_age_days:
+        description: Flag a pin when the oldest upstream commit it lacks is older than this many days
+        type: string
+        default: '30'
+      open_issue:
+        description: Open, update or close the tracking issue. Untick for a dry run that only writes the report.
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: pin-drift
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Check the upstream pins
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      # The token raises the GitHub API rate limit from 60 to 1,000 requests an hour, and is what
+      # `gh` uses to manage the tracking issue.
+      GITHUB_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      ISSUE_TITLE: Upstream pins have drifted
+      # A schedule has no inputs, so it always manages the issue; only a manual dry run doesn't.
+      MANAGE_ISSUE: ${{ github.event_name != 'workflow_dispatch' || inputs.open_issue }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      # No `npm ci`: the check uses only Node's standard library.
+      - name: Check the pins
+        id: check
+        env:
+          MAX_AGE_DAYS: ${{ inputs.max_age_days || '30' }}
+        run: |
+          set +e
+          node tools/ci/pin-drift.mjs --max-age-days "$MAX_AGE_DAYS" --output drift-report.md
+          code=$?
+          case "$code" in
+            0) echo "outcome=current" ;;
+            3) echo "outcome=drifted" ;;
+            *) echo "outcome=error" ;;
+          esac >> "$GITHUB_OUTPUT"
+
+      - name: Open or update the tracking issue
+        if: ${{ steps.check.outputs.outcome == 'drifted' && env.MANAGE_ISSUE == 'true' }}
+        run: |
+          number=$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --json number,title \
+            --jq "[.[] | select(.title == \"$ISSUE_TITLE\")][0].number // empty")
+          if [ -n "$number" ]; then
+            gh issue edit "$number" --body-file drift-report.md
+            echo "Updated issue #$number"
+          else
+            gh issue create --title "$ISSUE_TITLE" --body-file drift-report.md
+          fi
+
+      - name: Close the tracking issue once the pins are current
+        if: ${{ steps.check.outputs.outcome == 'current' && env.MANAGE_ISSUE == 'true' }}
+        run: |
+          number=$(gh issue list --state open --search "in:title \"$ISSUE_TITLE\"" --json number,title \
+            --jq "[.[] | select(.title == \"$ISSUE_TITLE\")][0].number // empty")
+          if [ -n "$number" ]; then
+            gh issue close "$number" --comment "The upstream pins are current again (or within the threshold), so this is closed. The next weekly check will open it again if they drift."
+            echo "Closed issue #$number"
+          fi
+
+      # A check that could not run says nothing about drift, so it is a failure, not a pass.
+      - name: Fail if the check could not run
+        if: ${{ steps.check.outputs.outcome == 'error' }}
+        run: |
+          echo "::error title=Pin drift check failed::The check could not run (an API error or an unreadable file). See the step above."
+          exit 1

@@ -38,6 +38,14 @@ the run green, and never leave a bare `@quarantine` tag: the static check will r
 The pins are commit SHAs in `docker/docker-compose.yml` ([ADR-0002](adr/0002-pin-upstream-app-versions.md)).
 A bump is deliberate, and the checks depend on which side moved.
 
+**Knowing when to bump.** A weekly workflow (`pin-drift.yml`) opens an issue, "Upstream pins have
+drifted", when upstream has commits a pin lacks and the oldest is more than 30 days old, or when
+upstream no longer has the pinned commit; it closes the issue when the pins are current again. It only
+reports. To check by hand: `GITHUB_TOKEN=$(gh auth token) node tools/ci/pin-drift.mjs` (without a token
+GitHub allows 60 requests an hour), `--pin backend=<sha>` to see the gap to a commit you are
+considering, and a manual dispatch of the workflow with "open_issue" unticked is a dry run
+([ADR-0002](adr/0002-pin-upstream-app-versions.md), amendment).
+
 1. Find the new SHA on the upstream default branch (`main` for the frontend, `master` for the
    backend) and change it in the compose file.
 2. **Frontend: prove the API URL patch still took effect.** It matches one exact string in one file

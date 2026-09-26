@@ -29,7 +29,7 @@ including the mutations that were invalid, are recorded in
 the person doing it.
 
 **What to do first if this is picked up (small to medium).** Run StrykerJS over the code this
-repository does own and unit-tests: `tools/` (152 tests under `npm run test:tools`, seconds per mutant).
+repository does own and unit-tests: `tools/` (177 tests under `npm run test:tools`, seconds per mutant).
 Nightly or on demand, not per pull request, reporting a score per module. Leave the end-to-end suites
 out: their cost per mutant is the reason above, and a low score there would mostly point at the pinned
 apps.
@@ -63,26 +63,22 @@ run in CI). There is no dependency-update automation. The two Dockerfiles owned 
 
 Grounded in what is open now, most useful first. None is required for the v1 scope.
 
-1. **A pin-drift check** (small). [0002](adr/0002-pin-upstream-app-versions.md) says the pins need a
-   periodic look, and today that is only a note in the [runbook](maintenance.md). A scheduled workflow
-   could compare each pinned SHA with the upstream tip and open an issue when they differ, so a pin
-   can't become accidentally permanent. It should not bump anything; that stays a reviewed change.
-2. **Cross-browser smoke** (medium). Everything runs on Chromium, and the icon-glyph behaviour behind
+1. **Cross-browser smoke** (medium). Everything runs on Chromium, and the icon-glyph behaviour behind
    `iconLabel()` was verified only there, so Firefox and WebKit mean re-checking it. A nightly smoke
    pass on both would close the gap without slowing pull requests. The hands-on
    [playwright-qa-portfolio](https://github.com/lodmaome/playwright-qa-portfolio) already covers
    cross-browser, which is why this was left out.
-3. **Keyboard, focus-order and screen-reader checks** (medium). The accessibility suite is the
+2. **Keyboard, focus-order and screen-reader checks** (medium). The accessibility suite is the
    machine-checkable subset (axe); the [strategy](test-strategy.md) says so. Keyboard navigation of the
    main flows is testable with Playwright and is what axe can't see.
-4. **Contract fuzzing** (medium), once the published spec declares its error responses. A schema-driven
+3. **Contract fuzzing** (medium), once the published spec declares its error responses. A schema-driven
    tool (Schemathesis) tests the spec, and this spec is incomplete
    ([0015](adr/0015-validate-responses-against-the-contract.md)); today the hand-written cases and the
    pinned defects carry the value.
-5. **A gate on the coverage-gap report** (small). It reports and doesn't block
+4. **A gate on the coverage-gap report** (small). It reports and doesn't block
    ([0014](adr/0014-pr-coverage-gap-flagger.md)). If gaps start being ignored, `--fail-on-gap` exists,
    and a pull-request comment would be more visible than a job summary.
-6. **Watch the upstream issues** (small, recurring). Four defects were reported upstream
+5. **Watch the upstream issues** (small, recurring). Four defects were reported upstream
    (`realworld-apps/aspnetcore-realworld-example-app` #141 to #144). When one is fixed, bump the pin and
    rewrite its `known-issue` test to assert the fix, as the [runbook](maintenance.md) describes.
 

@@ -36,3 +36,20 @@ Small, dependency-free Node scripts the CI workflow (and developers) call throug
 See [ADR-0008](../../docs/adr/0008-test-tiers-and-ci-triggers.md) and
 [ADR-0009](../../docs/adr/0009-visual-regression-in-a-pinned-image.md); the Allure scripts
 are in [ADR-0011](../../docs/adr/0011-allure-report-publishing.md).
+
+- `pin-drift.mjs` (`node tools/ci/pin-drift.mjs`) — checks whether the upstream app pins have fallen
+  behind their upstream for long enough to look at, and reports; it never changes a pin. A pin is
+  flagged when upstream has commits it lacks and the oldest of them is more than `--max-age-days`
+  (default 30) old, or when upstream no longer has the pinned commit. Exit 0: nothing to look at,
+  3: a pin needs a look, 2: the check itself failed (an API error, an unreadable file). The pure logic
+  is in `pins.mjs` (tested with plain data), the GitHub calls in `pin-drift.mjs`. `--pin
+backend=<sha>` checks as if a pin were somewhere else. Set `GITHUB_TOKEN`: unauthenticated, GitHub
+  allows 60 requests an hour. The weekly `.github/workflows/pin-drift.yml` runs it and manages a
+  tracking issue ([ADR-0002](../../docs/adr/0002-pin-upstream-app-versions.md), amendment).
+- `generate-api-types.mjs` (`npm run generate:api-types`) — regenerates `api-client/openapi.json` from
+  the running backend and `schema.d.ts` from that file, so the two committed contract files can't
+  disagree; `api-types.test.mjs` fails if they do
+  ([ADR-0015](../../docs/adr/0015-validate-responses-against-the-contract.md)).
+- `publish-branch.mjs` — which branches the report publisher may force-push to: `gh-pages`, or a
+  rehearsal branch named `gh-pages-<something>`, and nothing else
+  ([ADR-0012](../../docs/adr/0012-flake-handling.md), amendment).
