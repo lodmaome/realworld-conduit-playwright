@@ -13,7 +13,9 @@
 //
 // Environment:
 //   PUBLISH_REMOTE      git URL to publish to (in CI it carries the token; never printed)
-//   PUBLISH_BRANCH      branch to publish to (default: gh-pages)
+//   PUBLISH_BRANCH      branch to publish to (default: gh-pages). Only gh-pages, or a rehearsal
+//                       branch named gh-pages-<something>: this force-pushes, so anything else
+//                       is refused (tools/ci/publish-branch.mjs)
 //   RESULTS_DIR         Allure results to build from (default: allure-results)
 //   FLAKE_RESULTS_DIR   the flake reporter's results (default: flake-results); the flake
 //                       history and dashboard are updated when present, carried forward when not
@@ -32,9 +34,10 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { assertPublishBranch } from './publish-branch.mjs';
 
 const remote = process.env.PUBLISH_REMOTE;
-const branch = process.env.PUBLISH_BRANCH ?? 'gh-pages';
+const branch = assertPublishBranch(process.env.PUBLISH_BRANCH || 'gh-pages');
 const resultsDir = process.env.RESULTS_DIR ?? 'allure-results';
 const historyFile = 'allure-history/history.jsonl';
 const flakeHistoryFile = 'flake-history/flake-history.jsonl';

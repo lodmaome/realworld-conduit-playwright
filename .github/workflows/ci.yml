@@ -18,6 +18,13 @@ on:
         type: choice
         options: [smoke, regression, full]
         default: full
+      publish_branch:
+        description: >-
+          Where the report and flake history are published. Leave as gh-pages on main. On any other
+          branch, name a rehearsal branch (gh-pages-<something>) to run the whole publish path
+          without touching the real history; a run elsewhere publishes nothing.
+        type: string
+        default: gh-pages
 
 permissions:
   contents: read
@@ -159,7 +166,17 @@ jobs:
     needs: test
     # A red run is the one most worth reading, so this runs after failures too — but never for
     # a pull request (its results shouldn't enter the trend) and not for a cancelled run.
-    if: ${{ !cancelled() && github.event_name != 'pull_request' && needs.test.result != 'skipped' }}
+    # The history and the flake budget are only meant to see the default branch, so a run on any
+    # other branch publishes only if it names a rehearsal branch to publish to instead
+    # (docs/adr/0012-flake-handling.md, amendment).
+    if: >-
+      ${{ !cancelled()
+      && github.event_name != 'pull_request'
+      && needs.test.result != 'skipped'
+      && (github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      || (github.event_name == 'workflow_dispatch'
+      && inputs.publish_branch != ''
+      && inputs.publish_branch != 'gh-pages')) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -196,6 +213,9 @@ jobs:
         if: ${{ steps.results.outcome == 'success' }}
         env:
           PUBLISH_REMOTE: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          # Checked in code before anything is pushed (tools/ci/publish-branch.mjs): the publisher
+          # force-pushes, so it only writes to gh-pages or gh-pages-<something>.
+          PUBLISH_BRANCH: ${{ inputs.publish_branch || 'gh-pages' }}
           TIER: ${{ needs.test.outputs.tier }}
           # Quoted: unquoted, YAML reads " #" as the start of a comment and drops the run number.
           ALLURE_REPORT_NAME: 'RealWorld Conduit · ${{ needs.test.outputs.tier }} · run #${{ github.run_number }}'
