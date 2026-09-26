@@ -78,7 +78,21 @@ oldest-commit rule, history rewritten, and the API failures. Three mutation chec
 oldest-versus-newest rule, and ignoring a non-200 response) each failed the tests as they should; a
 first attempt at the third had not applied and was redone.
 
-**What I did not expect.** After many runs the tool hit GitHub's unauthenticated limit (60 requests an
+**The workflow, run on GitHub Actions the same day.** Five dispatches covered every path:
+
+| Run                                   | What it did                                            | Result                                                                             |
+| ------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| 36209281122 (`main`, dry run)         | The real pins, issue management off                    | Both "current"; every issue step skipped                                           |
+| 36209329015 (throwaway branch)        | Backend pinned three commits back, issue management on | "3 commits, oldest 49 days: drifted"; issue #3 opened; a warning annotation        |
+| 36209375066 (throwaway branch)        | The same again                                         | "Updated issue #3"; still exactly one open tracking issue                          |
+| 36209399275 (`main`)                  | The real pins, issue management on                     | "Every pin is at its upstream tip"; issue #3 closed with an explanatory comment    |
+| 36209427231 (`main`, threshold "abc") | A check that cannot run                                | The run **failed** at its last step with an error annotation; no issue was touched |
+
+The issue body was read back: its links are absolute and resolve (they would have been dead
+relative links inside an issue, which is why the report takes a base URL in Actions). The throwaway
+branch was deleted afterwards, and issue #3 stays as a closed record of the rehearsal.
+
+**An unexpected limit.** After many runs the tool hit GitHub's unauthenticated limit (60 requests an
 hour) and exited 2 with a clear message instead of reporting "no drift", which is the behaviour the
 workflow relies on. It uses the workflow's token, which raises the limit to 1,000 an hour.
 
