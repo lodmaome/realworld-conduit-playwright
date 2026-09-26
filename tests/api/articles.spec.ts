@@ -271,18 +271,32 @@ test.describe('known backend defects: articles', () => {
     expect(res.body).toEqual({ errors: 'InternalServerError' });
   });
 
-  test('editing the tag list is a 500', async ({ apiClient, userFactory, articleFactory }) => {
-    knownIssue('Updating an article with a tagList crashes with an unhandled 500.');
+  test('adding a new tag while editing is a 500, though adding an existing one works', async ({
+    apiClient,
+    userFactory,
+    articleFactory,
+  }) => {
+    knownIssue(
+      'Editing with a tag the database has not seen fails with a foreign-key error (an unhandled 500).',
+    );
     const author = await userFactory();
+    const [existing, brandNew] = [buildTag(), buildTag()];
     const created = await articleFactory(author, { tagList: [buildTag()] });
+    await articleFactory(author, { tagList: [existing] });
+    const edit = (tagList: string[]) =>
+      apiClient.send('PUT', `articles/${created.slug}`, {
+        token: author.token,
+        data: { article: { tagList } },
+      });
 
-    const res = await apiClient.send('PUT', `articles/${created.slug}`, {
-      token: author.token,
-      data: { article: { tagList: [buildTag()] } },
-    });
+    const withNewTag = await edit([brandNew]);
+    const withExistingTag = await edit([existing]);
 
-    expect(res.status).toBe(500);
-    expect(res.body).toEqual({ errors: 'InternalServerError' });
+    expect(withNewTag.status).toBe(500);
+    expect(withNewTag.body).toEqual({ errors: 'InternalServerError' });
+    // The other half of the same operation succeeds, which is what makes the failure look like a
+    // missing insert of the new tag and not a refusal to edit tags at all.
+    expect(withExistingTag.status).toBe(200);
   });
 
   test('a blank title on update is ignored, though on create it is a 422', async ({

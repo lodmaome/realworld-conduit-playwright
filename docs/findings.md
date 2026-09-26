@@ -9,33 +9,33 @@ was observed on **2026-09-25** against the pinned versions:
 Every item is **pinned by a test** that asserts the behaviour as observed and carries a `known-issue`
 annotation, so it is a regression check today and fails on purpose the day the app is fixed (see
 [ADR-0013](adr/0013-api-overrides-for-the-mocked-ui-project.md) and
-[ADR-0015](adr/0015-validate-responses-against-the-contract.md)). None of these have been reported
-upstream yet.
+[ADR-0015](adr/0015-validate-responses-against-the-contract.md)). Four of the backend items were
+reported upstream on 2026-09-25 (B1, B2, B5 and B8, in the table below); the rest have not been.
 
 This is a list of what was found, not a security review. Severity is not assigned: an "impact" line says
 what a user would see, and reading it is left to the reader.
 
-| ID  | Where    | Finding                                                                           |
-| --- | -------- | --------------------------------------------------------------------------------- |
-| B1  | backend  | A duplicate tag in `tagList` on create is an unhandled `500`                      |
-| B2  | backend  | Editing an article's `tagList` is an unhandled `500`                              |
-| B3  | backend  | Email addresses are not validated                                                 |
-| B4  | backend  | Email uniqueness is case-sensitive                                                |
-| B5  | backend  | A token stops working after its user is renamed: `404` on reads, `500` on writes  |
-| B6  | backend  | An invalid token is reported as a missing one                                     |
-| B7  | backend  | A user can follow themselves                                                      |
-| B8  | backend  | `favorited` is true for every viewer once anyone has favorited an article         |
-| B9  | backend  | `author.following` is always false on a single-article `GET`                      |
-| B10 | backend  | A blank title is ignored on update but rejected on create                         |
-| B11 | backend  | A negative `limit` or `offset` is accepted, while `abc` and `2.5` are refused     |
-| S1  | OpenAPI  | The spec declares only `200`, no body for five operations, and no required fields |
-| F1  | frontend | A failed request for a list leaves "Loading articles..." on screen for good       |
-| F2  | frontend | A failed tags request leaves "Loading tags..." on screen for good                 |
-| F3  | frontend | An unknown article, or a failed comments request, blanks the whole article page   |
-| F4  | frontend | A profile that can't be loaded renders a blank page                               |
-| F5  | frontend | Editing an article that doesn't exist opens an empty editor with no error         |
-| F6  | frontend | A failed follow, favorite or article delete tells the user nothing                |
-| F7  | frontend | A long unbroken word makes the page scroll sideways                               |
+| ID  | Where    | Finding                                                                                                                                                                  |
+| --- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| B1  | backend  | A duplicate tag in `tagList` on create is an unhandled `500` ([#141](https://github.com/realworld-apps/aspnetcore-realworld-example-app/issues/141))                     |
+| B2  | backend  | Adding a new tag while editing an article is an unhandled `500` ([#142](https://github.com/realworld-apps/aspnetcore-realworld-example-app/issues/142))                  |
+| B3  | backend  | Email addresses are not validated                                                                                                                                        |
+| B4  | backend  | Email uniqueness is case-sensitive                                                                                                                                       |
+| B5  | backend  | A token stops working after its user is renamed: `404` on reads, `500` on writes ([#143](https://github.com/realworld-apps/aspnetcore-realworld-example-app/issues/143)) |
+| B6  | backend  | An invalid token is reported as a missing one                                                                                                                            |
+| B7  | backend  | A user can follow themselves                                                                                                                                             |
+| B8  | backend  | `favorited` is true for every viewer once anyone has favorited an article ([#144](https://github.com/realworld-apps/aspnetcore-realworld-example-app/issues/144))        |
+| B9  | backend  | `author.following` is always false on a single-article `GET`                                                                                                             |
+| B10 | backend  | A blank title is ignored on update but rejected on create                                                                                                                |
+| B11 | backend  | A negative `limit` or `offset` is accepted, while `abc` and `2.5` are refused                                                                                            |
+| S1  | OpenAPI  | The spec declares only `200`, no body for five operations, and no required fields                                                                                        |
+| F1  | frontend | A failed request for a list leaves "Loading articles..." on screen for good                                                                                              |
+| F2  | frontend | A failed tags request leaves "Loading tags..." on screen for good                                                                                                        |
+| F3  | frontend | An unknown article, or a failed comments request, blanks the whole article page                                                                                          |
+| F4  | frontend | A profile that can't be loaded renders a blank page                                                                                                                      |
+| F5  | frontend | Editing an article that doesn't exist opens an empty editor with no error                                                                                                |
+| F6  | frontend | A failed follow, favorite or article delete tells the user nothing                                                                                                       |
+| F7  | frontend | A long unbroken word makes the page scroll sideways                                                                                                                      |
 
 ## Backend
 
@@ -62,9 +62,11 @@ curl -s -w ' -> %{http_code}\n' -X POST $BASE/articles -H "$H" -H "Authorization
 Distinct tags are fine, including several new ones, spaces and case variants; only the same tag twice in
 one request fails, whether the tag is new or existing. **Impact:** a client that doesn't deduplicate
 gets a server error, and the body is a string where every other error is `{ errors: { field: [...] } }`.
+Backend log: `InvalidOperationException: The instance of entity type 'ArticleTag' cannot be tracked because
+another instance with the same key value for {'ArticleId', 'TagId'} is already being tracked`.
 Pinned in `tests/api/articles.spec.ts` (known backend defects: articles).
 
-### B2. Editing the `tagList` is an unhandled `500`
+### B2. Adding a new tag while editing an article is an unhandled `500`
 
 ```bash
 SLUG=$(curl -s -X POST $BASE/articles -H "$H" -H "Authorization: Token $T" \
@@ -75,7 +77,13 @@ curl -s -w ' -> %{http_code}\n' -X PUT $BASE/articles/$SLUG -H "$H" -H "Authoriz
 # {"errors":"InternalServerError"} -> 500
 ```
 
-**Impact:** an article's tags can't be changed after publishing. Pinned in `tests/api/articles.spec.ts`.
+Editing to a tag list made only of tags that already exist (or the article's own) is `200`, so the
+failure is specific to a tag the database has not seen. Backend log: `SQLite Error 19: 'FOREIGN KEY
+constraint failed'` on the insert into `ArticleTags`. Upstream issue
+[#92](https://github.com/realworld-apps/aspnetcore-realworld-example-app/issues/92) (closed 2022) was
+the mirror image, a `UNIQUE constraint failed` when adding an _existing_ tag, so its fix may have
+swapped one failure for the other. **Impact:** a tag can't be introduced when an article is edited.
+Pinned in `tests/api/articles.spec.ts`.
 
 ### B3. Email addresses are not validated
 
@@ -108,8 +116,10 @@ curl -s -w ' -> %{http_code}\n' -X POST $BASE/articles -H "$H" -H "Authorization
 # {"errors":"InternalServerError"} -> 500
 ```
 
-**Impact:** another session left signed in on the old name gets a `404` reading its account and a `500`
-writing. Pinned in `tests/api/auth.spec.ts`.
+Backend log for the `500`: `System.InvalidOperationException: Sequence contains no elements`, most
+likely a lookup of the user by the token's old username. **Impact:** another session left signed in
+on the old name gets a `404` reading its account and a `500` writing. Pinned in
+`tests/api/auth.spec.ts`.
 
 ### B6. An invalid token is reported as a missing one
 
