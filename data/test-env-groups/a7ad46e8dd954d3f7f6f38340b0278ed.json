@@ -1,0 +1,1 @@
+{"id":"a7ad46e8dd954d3f7f6f38340b0278ed","fullName":"api/contract-validator.spec.ts › contract validator › accepts an int32 and rejects a fraction or an overflow","name":"accepts an int32 and rejects a fraction or an overflow","status":"passed","testResultsByEnv":{"default":"3194abc389dfc622ff15831a221cc0dc"}}

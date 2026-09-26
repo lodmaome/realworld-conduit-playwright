@@ -1,0 +1,1 @@
+{"id":"1c9bb43ed2286e73943e2c32e80e11b9","fullName":"api/listing.spec.ts › listing articles › a limit or offset that is not a whole number is refused with 422","name":"a limit or offset that is not a whole number is refused with 422","status":"passed","testResultsByEnv":{"default":"e2b3e9c534f4ae0280225015d4f1e2fc"}}

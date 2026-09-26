@@ -1,0 +1,1 @@
+{"id":"78a86df15d61e998678018e4c898411f","fullName":"api/articles.spec.ts › deleting an article › the author deletes it with a 204, and it is gone","name":"the author deletes it with a 204, and it is gone","status":"passed","testResultsByEnv":{"default":"c8ddd9c8450206194e9f1eb44e1f2395"}}

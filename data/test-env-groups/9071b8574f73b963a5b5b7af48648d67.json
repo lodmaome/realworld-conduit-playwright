@@ -1,0 +1,1 @@
+{"id":"9071b8574f73b963a5b5b7af48648d67","fullName":"api/auth.spec.ts › authentication › refuses a token with no scheme in front of it","name":"refuses a token with no scheme in front of it","status":"passed","testResultsByEnv":{"default":"ec86849debed9b455872933a200ad0ff"}}

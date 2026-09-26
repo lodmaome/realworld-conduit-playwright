@@ -1,0 +1,1 @@
+{"id":"37c25ae98609f926465ee15792780b55","fullName":"ui/settings.spec.ts › settings › logging out returns to the signed-out state and locks protected pages","name":"logging out returns to the signed-out state and locks protected pages","status":"passed","testResultsByEnv":{"default":"041d71e2d457411dbc3186c541e334d0"}}

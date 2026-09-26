@@ -1,0 +1,1 @@
+{"id":"ad1ae9f72c506a0cd34a971d94ad9034","fullName":"api/articles.spec.ts › creating an article › returns 201 with the article, its slug, and the author","name":"returns 201 with the article, its slug, and the author","status":"passed","testResultsByEnv":{"default":"42c71bd667ecb7a5bc06ac383b20a2ec"}}

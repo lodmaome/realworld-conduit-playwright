@@ -1,0 +1,1 @@
+{"id":"c03ba643f89245907ada9e286634b362","fullName":"api/comments.spec.ts › deleting a comment › someone else's comment is refused with 403, even by the article's author","name":"someone else's comment is refused with 403, even by the article's author","status":"passed","testResultsByEnv":{"default":"8a54f083b8dad3cea3cfd4935b5055b0"}}

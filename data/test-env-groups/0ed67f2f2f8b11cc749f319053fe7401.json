@@ -1,0 +1,1 @@
+{"id":"0ed67f2f2f8b11cc749f319053fe7401","fullName":"ui-mocked/home.spec.ts › favoriting from the feed (mocked API) › a failed favorite leaves the count and button unchanged and shows no error","name":"a failed favorite leaves the count and button unchanged and shows no error","status":"passed","testResultsByEnv":{"default":"c78e4eaa91df84a43aa4097c5050ef41"}}

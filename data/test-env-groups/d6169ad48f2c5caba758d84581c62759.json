@@ -1,0 +1,1 @@
+{"id":"d6169ad48f2c5caba758d84581c62759","fullName":"api/auth.spec.ts › registration › returns 201 with the user and a token, and never the password","name":"returns 201 with the user and a token, and never the password","status":"passed","testResultsByEnv":{"default":"73689fc40a74c477de3ad408cb07ed71"}}

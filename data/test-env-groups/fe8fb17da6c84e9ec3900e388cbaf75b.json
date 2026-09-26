@@ -1,0 +1,1 @@
+{"id":"fe8fb17da6c84e9ec3900e388cbaf75b","fullName":"ui-mocked/article.spec.ts › article actions that fail (mocked API) › a failed favorite leaves the article as it was and shows no error","name":"a failed favorite leaves the article as it was and shows no error","status":"passed","testResultsByEnv":{"default":"750512f6d9a9621adf040a1bc819004b"}}

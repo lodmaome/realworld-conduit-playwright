@@ -1,0 +1,1 @@
+{"id":"8566b7b72bba0aa49e1c1890f04e6955","fullName":"api/comments.spec.ts › adding a comment › refuses an empty body with 422","name":"refuses an empty body with 422","status":"passed","testResultsByEnv":{"default":"f21c03ac927667b31e8d381582d5b1db"}}

@@ -1,0 +1,1 @@
+{"id":"8d126e199eeabfb3113b7620adcf41a3","fullName":"ui/auth.spec.ts › session › a pre-authenticated user sees their own username in the header, not Sign in/Sign up","name":"a pre-authenticated user sees their own username in the header, not Sign in/Sign up","status":"passed","testResultsByEnv":{"default":"93aaf579ac68db11e32f2ef9ee7d086d"}}

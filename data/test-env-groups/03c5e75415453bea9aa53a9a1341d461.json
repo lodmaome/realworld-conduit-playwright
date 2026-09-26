@@ -1,0 +1,1 @@
+{"id":"03c5e75415453bea9aa53a9a1341d461","fullName":"api/auth.spec.ts › registration › refuses a username that is taken, with 409","name":"refuses a username that is taken, with 409","status":"passed","testResultsByEnv":{"default":"cf42ecd68aa67f6b97742a70c77f99bd"}}

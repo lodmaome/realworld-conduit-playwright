@@ -1,0 +1,1 @@
+{"id":"b64287a5ae0c65eee44dfd49c7253ea4","fullName":"api/contract-validator.spec.ts › contract validator › does not require body on an article, because list items omit it","name":"does not require body on an article, because list items omit it","status":"passed","testResultsByEnv":{"default":"e56b99e31762b78bc414b3735acfc046"}}

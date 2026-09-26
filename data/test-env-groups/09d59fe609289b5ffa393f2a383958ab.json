@@ -1,0 +1,1 @@
+{"id":"09d59fe609289b5ffa393f2a383958ab","fullName":"api/spec-gaps.spec.ts › gaps in the published OpenAPI spec › it declares no response body for five operations that do return one or answer 204","name":"it declares no response body for five operations that do return one or answer 204","status":"passed","testResultsByEnv":{"default":"367aeaa8fffea9d97465b849c1570f84"}}

@@ -1,0 +1,1 @@
+{"id":"69802d05bf7bafeb475b33de9a05b2d2","fullName":"api/auth.spec.ts › registration › refuses blank fields with 422 and one message per problem","name":"refuses blank fields with 422 and one message per problem","status":"passed","testResultsByEnv":{"default":"5e2f7c2cd7f308a60f8b6755fa6ff59c"}}

@@ -1,0 +1,1 @@
+{"id":"f9ba0d4d37697949bba0ba21933e2ac6","fullName":"api/listing.spec.ts › listing articles › a limit of 0 returns no articles but still the count","name":"a limit of 0 returns no articles but still the count","status":"passed","testResultsByEnv":{"default":"8c2b42a124329185741cfd98e1e31472"}}

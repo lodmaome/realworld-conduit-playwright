@@ -1,0 +1,1 @@
+{"id":"db32926b78c4b8bbbb79a98f098c1bb6","fullName":"api/social.spec.ts › known backend defects: social › a single article says its author is not followed, though the list and the profile say so","name":"a single article says its author is not followed, though the list and the profile say so","status":"passed","testResultsByEnv":{"default":"0a65f90f4a18b914fa6d40d0f3b4e3fe"}}

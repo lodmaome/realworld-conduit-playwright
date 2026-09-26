@@ -1,0 +1,1 @@
+{"id":"ae5d467dffe29ba158f353eb2fa041ed","fullName":"api/articles.spec.ts › creating an article › refuses a blank title and a missing body with 422","name":"refuses a blank title and a missing body with 422","status":"passed","testResultsByEnv":{"default":"d9a56a124ff522bb3a920e0ca635841d"}}

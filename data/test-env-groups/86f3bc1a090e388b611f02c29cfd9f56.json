@@ -1,0 +1,1 @@
+{"id":"86f3bc1a090e388b611f02c29cfd9f56","fullName":"ui-mocked/article.spec.ts › article actions that fail (mocked API) › a failed follow leaves the author unfollowed and shows no error","name":"a failed follow leaves the author unfollowed and shows no error","status":"passed","testResultsByEnv":{"default":"997e0fbaaca12f2edd444c952382c3e6"}}

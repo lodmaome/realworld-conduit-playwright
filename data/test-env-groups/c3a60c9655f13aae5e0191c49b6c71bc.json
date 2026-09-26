@@ -1,0 +1,1 @@
+{"id":"c3a60c9655f13aae5e0191c49b6c71bc","fullName":"api/articles.spec.ts › updating an article › changing the title changes the slug, and the old one is gone","name":"changing the title changes the slug, and the old one is gone","status":"passed","testResultsByEnv":{"default":"7a1f649dac87feee538394e2a127a581"}}

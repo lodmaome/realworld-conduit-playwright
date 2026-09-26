@@ -1,0 +1,1 @@
+{"id":"077d35d235d3aad0e432cfd7a5758312","fullName":"api/contract-validator.spec.ts › contract validator › accepts the error envelope on a 4xx and rejects other shapes","name":"accepts the error envelope on a 4xx and rejects other shapes","status":"passed","testResultsByEnv":{"default":"1e97b6b9cfc9b16c9676ef6b0e0f5d98"}}

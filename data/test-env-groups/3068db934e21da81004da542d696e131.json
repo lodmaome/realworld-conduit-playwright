@@ -1,0 +1,1 @@
+{"id":"3068db934e21da81004da542d696e131","fullName":"api/auth.spec.ts › registration › refuses a password shorter than 8 characters","name":"refuses a password shorter than 8 characters","status":"passed","testResultsByEnv":{"default":"dbe04b7f96a49456adafdc5db7134ce4"}}

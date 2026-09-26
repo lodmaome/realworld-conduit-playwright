@@ -1,0 +1,1 @@
+{"id":"e705382e0affa456d309f7c586a2d205","fullName":"api/auth.spec.ts › authentication › GET /user returns the token holder","name":"GET /user returns the token holder","status":"passed","testResultsByEnv":{"default":"ba25281348f5ed8773163f1f8c7e8990"}}

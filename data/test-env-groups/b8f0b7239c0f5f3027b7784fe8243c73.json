@@ -1,0 +1,1 @@
+{"id":"b8f0b7239c0f5f3027b7784fe8243c73","fullName":"api/auth.spec.ts › known backend defects: accounts › a malformed email address is accepted at registration","name":"a malformed email address is accepted at registration","status":"passed","testResultsByEnv":{"default":"cac047bb6effd0e6fb52c087b9974b05"}}
