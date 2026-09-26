@@ -51,6 +51,27 @@ export default defineConfig({
         baseURL: FRONTEND_BASE_URL,
       },
     },
+    // The smoke tests of `ui` again, in the other two engines. Smoke only: this checks that each
+    // feature area still works in Firefox and WebKit, not that every test does. See
+    // docs/adr/0016-cross-browser-smoke.md.
+    {
+      name: 'ui-firefox',
+      testDir: './tests/ui',
+      grep: /@smoke/,
+      use: {
+        ...devices['Desktop Firefox'],
+        baseURL: FRONTEND_BASE_URL,
+      },
+    },
+    {
+      name: 'ui-webkit',
+      testDir: './tests/ui',
+      grep: /@smoke/,
+      use: {
+        ...devices['Desktop Safari'],
+        baseURL: FRONTEND_BASE_URL,
+      },
+    },
     {
       // Route-interception-mocked UI specs — kept out of tests/ui so it's always
       // obvious whether a given test exercises the real backend. See docs/adr/0001.

@@ -22,13 +22,14 @@ everything else:
 
 ## The suites
 
-| Suite       | Proves                                                                                                                         | Data                                                 | Runs                    | Tests |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- | ----------------------- | ----- |
-| `api`       | The REST contract: statuses, validation, authorisation and data lifecycles, each response checked against the OpenAPI contract | Real backend (plus offline contract and stub checks) | Runner                  | 111   |
-| `ui`        | User journeys end to end: auth, articles, comments, favorites, feed and pagination, profile and follow, settings               | Real backend, set up through the API                 | Runner                  | 37    |
-| `visual`    | The pages look the same: a screenshot per scene at zero pixel tolerance                                                        | Fixed stubs                                          | Pinned Playwright image | 10    |
-| `a11y`      | No new accessibility violations (axe, WCAG 2.0/2.1 A and AA), and none silently fixed                                          | Fixed stubs                                          | Runner                  | 10    |
-| `ui-mocked` | UI behaviour the real backend can't easily produce (errors, edge payloads)                                                     | Route interception                                   | Runner                  | 43    |
+| Suite                     | Proves                                                                                                                         | Data                                                 | Runs                    | Tests       |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- | ----------------------- | ----------- |
+| `api`                     | The REST contract: statuses, validation, authorisation and data lifecycles, each response checked against the OpenAPI contract | Real backend (plus offline contract and stub checks) | Runner                  | 111         |
+| `ui`                      | User journeys end to end: auth, articles, comments, favorites, feed and pagination, profile and follow, settings               | Real backend, set up through the API                 | Runner                  | 37          |
+| `visual`                  | The pages look the same: a screenshot per scene at zero pixel tolerance                                                        | Fixed stubs                                          | Pinned Playwright image | 10          |
+| `a11y`                    | No new accessibility violations (axe, WCAG 2.0/2.1 A and AA), and none silently fixed                                          | Fixed stubs                                          | Runner                  | 10          |
+| `ui-mocked`               | UI behaviour the real backend can't easily produce (errors, edge payloads)                                                     | Route interception                                   | Runner                  | 43          |
+| `ui-firefox`, `ui-webkit` | The smoke tests of `ui` again, in Firefox and WebKit                                                                           | Real backend                                         | Runner (nightly)        | 18 (9 each) |
 
 The visual and a11y suites share one list of ten "scenes" (a page in a state), so they can't drift
 apart on coverage. Both render from stubs typed from the OpenAPI schema, with external fonts and
@@ -60,7 +61,7 @@ opens the tag's page. Nothing assumes a seeded user or an empty feed.
 
 Tests are selected by tier, not by tagging everything ([0008](adr/0008-test-tiers-and-ci-triggers.md)):
 **smoke** (one happy path per feature area) on pull requests, **regression** (all functional
-tests) on pushes to `main`, **full** (adding a11y and visual) nightly and on demand. Each tier is
+tests) on pushes to `main`, **full** (adding a11y, visual and the cross-browser smoke) nightly and on demand. Each tier is
 an npm script, so a developer reproduces a CI run with the same command. Only `@smoke` and
 `@quarantine` are tags. A fast static job (types, lint, format, tag and quarantine rules, tool
 unit tests, image pin) runs alongside on every trigger. Separately, a weekly job reports when an
@@ -108,23 +109,26 @@ bootstrap preparing it; an endpoint only used to set up, or only stubs reach, is
 Decided against, as opposed to a limitation (something wanted and not possible). The first two were
 excluded by the original brief; what each would take is in [future work](future-work.md).
 
-| Not done                                  | Why                                                                                                                                                        |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Mutation testing                          | The code under test is upstream's and pinned; a mutant per Docker rebuild is hours for a signal that is mostly about code this repository doesn't own      |
-| Security scanning, or a security review   | A demo app it doesn't own, so findings would be upstream's. Authorisation and token behaviour are tested as functionality, and the findings page says so   |
-| Performance and load testing              | The app is a demo on SQLite in Docker on a shared CI runner; timings from it wouldn't mean anything, and load is a different question with different tools |
-| Cross-browser and mobile                  | Chromium only, by choice; the icon-glyph handling was verified only there. The hands-on portfolio covers cross-browser                                     |
-| Testing the app's own code                | No unit tests or code coverage of the backend or frontend: both are pinned upstream builds, tested through the UI and the API                              |
-| Running against a hosted third-party site | Controlling the environment is the point ([0002](adr/0002-pin-upstream-app-versions.md), [0005](adr/0005-frontend-custom-docker-build.md))                 |
-| Fixing the app's defects                  | Defects are reported ([findings](findings.md)), not patched: the app is pinned so that CI doesn't move under the tests                                     |
-| Being a framework others install          | It is a portfolio to read and run, not a published package                                                                                                 |
+| Not done                                  | Why                                                                                                                                                                                |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mutation testing                          | The code under test is upstream's and pinned; a mutant per Docker rebuild is hours for a signal that is mostly about code this repository doesn't own                              |
+| Security scanning, or a security review   | A demo app it doesn't own, so findings would be upstream's. Authorisation and token behaviour are tested as functionality, and the findings page says so                           |
+| Performance and load testing              | The app is a demo on SQLite in Docker on a shared CI runner; timings from it wouldn't mean anything, and load is a different question with different tools                         |
+| Full cross-browser coverage, and mobile   | Smoke runs in Firefox and WebKit ([0016](adr/0016-cross-browser-smoke.md)); the rest of the suite is Chromium, and mobile devices are a different question from engine differences |
+| Testing the app's own code                | No unit tests or code coverage of the backend or frontend: both are pinned upstream builds, tested through the UI and the API                                                      |
+| Running against a hosted third-party site | Controlling the environment is the point ([0002](adr/0002-pin-upstream-app-versions.md), [0005](adr/0005-frontend-custom-docker-build.md))                                         |
+| Fixing the app's defects                  | Defects are reported ([findings](findings.md)), not patched: the app is pinned so that CI doesn't move under the tests                                                             |
+| Being a framework others install          | It is a portfolio to read and run, not a published package                                                                                                                         |
 
 ## Known limitations
 
 Stated plainly, because a strategy that hides its gaps isn't one.
 
-- **One browser.** Everything runs on Chromium. The icon-glyph behaviour behind `iconLabel()` was
-  verified only there, so adding Firefox or WebKit means re-checking it.
+- **Most of the suite is Chromium-only.** The nine `ui` smoke tests also run in Firefox and WebKit
+  nightly, and the accessible names behind `iconLabel()` were measured identical in all three; the
+  other 28 `ui` tests, `ui-mocked`, `a11y` and `visual` run on Chromium. WebKit here is Playwright's
+  build, not Safari, and a failure in the other engines shows nightly, not on the pull request
+  ([0016](adr/0016-cross-browser-smoke.md)).
 - **Visual and a11y don't touch the backend.** They render from stubs. Real-backend integration is
   the `ui` suite's job; nothing checks at run time that the real API still returns what the stubs
   assume, beyond types generated from its spec.

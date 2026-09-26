@@ -9,20 +9,21 @@ Format: one file per decision, numbered sequentially, never renumbered or delete
 A reversed decision gets a new ADR that supersedes the old one; the old one is left in
 place with its status updated.
 
-| #                                                        | Decision                                                                      | Status   |
-| -------------------------------------------------------- | ----------------------------------------------------------------------------- | -------- |
-| [0001](0001-api-mocking-strategy.md)                     | API mocking strategy for UI tests                                             | Accepted |
-| [0002](0002-pin-upstream-app-versions.md)                | Pin upstream app versions to a commit SHA                                     | Accepted |
-| [0003](0003-package-manager.md)                          | Package manager for the test project                                          | Accepted |
-| [0004](0004-allure-report-publishing.md)                 | Publish Allure reports to GitHub Pages                                        | Accepted |
-| [0005](0005-frontend-custom-docker-build.md)             | Custom Dockerfile and build-time API URL patch for the frontend               | Accepted |
-| [0006](0006-backend-database-provider.md)                | Run the backend against its default SQLite provider, not SQL Server           | Accepted |
-| [0007](0007-fixture-composed-page-objects.md)            | Fixture-composed page objects and locator strategy                            | Accepted |
-| [0008](0008-test-tiers-and-ci-triggers.md)               | Test tiers and CI triggers                                                    | Accepted |
-| [0009](0009-visual-regression-in-a-pinned-image.md)      | Visual regression in a pinned image, on stubbed data                          | Accepted |
-| [0010](0010-a11y-as-a-ratchet-on-recorded-violations.md) | Accessibility as a ratchet on recorded violations                             | Accepted |
-| [0011](0011-allure-report-publishing.md)                 | Publishing the Allure report: Allure 3, history in a branch                   | Accepted |
-| [0012](0012-flake-handling.md)                           | Flake handling: retry with reporting, a flake budget, accountable quarantine  | Accepted |
-| [0013](0013-api-overrides-for-the-mocked-ui-project.md)  | Per-request overrides for the mocked UI project, and pinning frontend gaps    | Accepted |
-| [0014](0014-pr-coverage-gap-flagger.md)                  | A PR coverage-gap flagger built on the API contract and recorded traffic      | Accepted |
-| [0015](0015-validate-responses-against-the-contract.md)  | Validate real responses against the OpenAPI contract, and supplement its gaps | Accepted |
+| #                                                        | Decision                                                                          | Status   |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------- | -------- |
+| [0001](0001-api-mocking-strategy.md)                     | API mocking strategy for UI tests                                                 | Accepted |
+| [0002](0002-pin-upstream-app-versions.md)                | Pin upstream app versions to a commit SHA                                         | Accepted |
+| [0003](0003-package-manager.md)                          | Package manager for the test project                                              | Accepted |
+| [0004](0004-allure-report-publishing.md)                 | Publish Allure reports to GitHub Pages                                            | Accepted |
+| [0005](0005-frontend-custom-docker-build.md)             | Custom Dockerfile and build-time API URL patch for the frontend                   | Accepted |
+| [0006](0006-backend-database-provider.md)                | Run the backend against its default SQLite provider, not SQL Server               | Accepted |
+| [0007](0007-fixture-composed-page-objects.md)            | Fixture-composed page objects and locator strategy                                | Accepted |
+| [0008](0008-test-tiers-and-ci-triggers.md)               | Test tiers and CI triggers                                                        | Accepted |
+| [0009](0009-visual-regression-in-a-pinned-image.md)      | Visual regression in a pinned image, on stubbed data                              | Accepted |
+| [0010](0010-a11y-as-a-ratchet-on-recorded-violations.md) | Accessibility as a ratchet on recorded violations                                 | Accepted |
+| [0011](0011-allure-report-publishing.md)                 | Publishing the Allure report: Allure 3, history in a branch                       | Accepted |
+| [0012](0012-flake-handling.md)                           | Flake handling: retry with reporting, a flake budget, accountable quarantine      | Accepted |
+| [0013](0013-api-overrides-for-the-mocked-ui-project.md)  | Per-request overrides for the mocked UI project, and pinning frontend gaps        | Accepted |
+| [0014](0014-pr-coverage-gap-flagger.md)                  | A PR coverage-gap flagger built on the API contract and recorded traffic          | Accepted |
+| [0015](0015-validate-responses-against-the-contract.md)  | Validate real responses against the OpenAPI contract, and supplement its gaps     | Accepted |
+| [0016](0016-cross-browser-smoke.md)                      | Cross-browser smoke: the `ui` smoke tests in Firefox and WebKit, in the full tier | Accepted |

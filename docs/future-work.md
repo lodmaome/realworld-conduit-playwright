@@ -63,22 +63,17 @@ run in CI). There is no dependency-update automation. The two Dockerfiles owned 
 
 Grounded in what is open now, most useful first. None is required for the v1 scope.
 
-1. **Cross-browser smoke** (medium). Everything runs on Chromium, and the icon-glyph behaviour behind
-   `iconLabel()` was verified only there, so Firefox and WebKit mean re-checking it. A nightly smoke
-   pass on both would close the gap without slowing pull requests. The hands-on
-   [playwright-qa-portfolio](https://github.com/lodmaome/playwright-qa-portfolio) already covers
-   cross-browser, which is why this was left out.
-2. **Keyboard, focus-order and screen-reader checks** (medium). The accessibility suite is the
+1. **Keyboard, focus-order and screen-reader checks** (medium). The accessibility suite is the
    machine-checkable subset (axe); the [strategy](test-strategy.md) says so. Keyboard navigation of the
    main flows is testable with Playwright and is what axe can't see.
-3. **Contract fuzzing** (medium), once the published spec declares its error responses. A schema-driven
+2. **Contract fuzzing** (medium), once the published spec declares its error responses. A schema-driven
    tool (Schemathesis) tests the spec, and this spec is incomplete
    ([0015](adr/0015-validate-responses-against-the-contract.md)); today the hand-written cases and the
    pinned defects carry the value.
-4. **A gate on the coverage-gap report** (small). It reports and doesn't block
+3. **A gate on the coverage-gap report** (small). It reports and doesn't block
    ([0014](adr/0014-pr-coverage-gap-flagger.md)). If gaps start being ignored, `--fail-on-gap` exists,
    and a pull-request comment would be more visible than a job summary.
-5. **Watch the upstream issues** (small, recurring). Four defects were reported upstream
+4. **Watch the upstream issues** (small, recurring). Four defects were reported upstream
    (`realworld-apps/aspnetcore-realworld-example-app` #141 to #144). When one is fixed, bump the pin and
    rewrite its `known-issue` test to assert the fix, as the [runbook](maintenance.md) describes.
 

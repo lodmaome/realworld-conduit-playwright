@@ -74,6 +74,11 @@ jobs:
       - run: npm ci
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
+      # Only the full tier runs the cross-browser smoke (docs/adr/0016-cross-browser-smoke.md), so
+      # only it pays for downloading the other two engines.
+      - name: Install Firefox and WebKit
+        if: ${{ env.TIER == 'full' }}
+        run: npx playwright install --with-deps firefox webkit
 
       - name: Start the application
         run: |

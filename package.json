@@ -8,9 +8,10 @@
   },
   "scripts": {
     "test": "npm run test:regression",
-    "test:smoke": "playwright test --grep @smoke --grep-invert @quarantine",
+    "test:smoke": "playwright test --project=api --project=ui --grep @smoke --grep-invert @quarantine",
     "test:regression": "playwright test --project=api --project=ui --project=ui-mocked --grep-invert @quarantine",
-    "test:full": "node tools/ci/run-all.mjs test:regression test:a11y test:visual",
+    "test:full": "node tools/ci/run-all.mjs test:regression test:a11y test:visual test:cross-browser",
+    "test:cross-browser": "playwright test --project=ui-firefox --project=ui-webkit --workers=2 --grep-invert @quarantine",
     "test:quarantine": "playwright test --grep @quarantine --pass-with-no-tests",
     "test:api": "playwright test --project=api",
     "test:ui": "playwright test --project=ui",

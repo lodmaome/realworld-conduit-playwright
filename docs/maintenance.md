@@ -84,7 +84,9 @@ won't match ([ADR-0009](adr/0009-visual-regression-in-a-pinned-image.md)).
 
 1. Change `@playwright/test` in `package.json` to the new **exact** version (no caret).
 2. Change the tag in `docker/playwright/Dockerfile` (`FROM mcr.microsoft.com/playwright:v<version>-noble`).
-3. `npm install`, then `npm run check:playwright-image` (CI runs it too and fails on a mismatch).
+3. `npm install`, then `npx playwright install chromium firefox webkit` (a new version needs new builds of
+   all three engines; the cross-browser smoke needs Firefox and WebKit, [0016](adr/0016-cross-browser-smoke.md)),
+   then `npm run check:playwright-image` (CI runs it too and fails on a mismatch).
 4. **Regenerate every visual baseline**, because a new browser build renders slightly differently:
    `npm run test:visual:update`. Look at the images in the diff before committing.
 5. Re-check the a11y records (`npm run test:a11y`); they should not move.
