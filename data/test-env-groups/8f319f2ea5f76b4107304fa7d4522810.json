@@ -1,0 +1,1 @@
+{"id":"8f319f2ea5f76b4107304fa7d4522810","fullName":"api/auth.spec.ts › registration › refuses an email that is taken, with 409","name":"refuses an email that is taken, with 409","status":"passed","testResultsByEnv":{"default":"24d102d42096e99ee7133071077f0bf4"}}

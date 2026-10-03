@@ -1,0 +1,1 @@
+{"id":"41062b115cc74d801814c03f194566e0","fullName":"api/auth.spec.ts › authentication › a request with no token is refused with 401","name":"a request with no token is refused with 401","status":"passed","testResultsByEnv":{"default":"c106d3da3b9ca02caf21d2a36c4153b0"}}
