@@ -1,0 +1,1 @@
+{"id":"e7821ef795abca6fd2afa04882c17c88","fullName":"api/auth.spec.ts › registration › refuses a request with no user object","name":"refuses a request with no user object","status":"passed","testResultsByEnv":{"default":"5aa6b1459c5d0c3725eabbd8d4bfcbea"}}

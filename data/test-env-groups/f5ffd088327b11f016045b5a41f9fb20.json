@@ -1,0 +1,1 @@
+{"id":"f5ffd088327b11f016045b5a41f9fb20","fullName":"api/contract-validator.spec.ts › contract validator › accepts null where the spec marks a field nullable","name":"accepts null where the spec marks a field nullable","status":"passed","testResultsByEnv":{"default":"f2ba7e77303b45fda783d3c7a54a511a"}}

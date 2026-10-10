@@ -1,0 +1,1 @@
+{"id":"634d8a73d3a7972c0c441fc5a4088be9","fullName":"api/auth.spec.ts › signing in › refuses blank credentials with 422","name":"refuses blank credentials with 422","status":"passed","testResultsByEnv":{"default":"46d600c1f38b28b7a5da3fac2e1ff3c9"}}

@@ -1,0 +1,1 @@
+{"id":"641fb1c496b0b918133392373d7a9287","fullName":"api/auth.spec.ts › updating the account › an empty username and a short password are refused with 422","name":"an empty username and a short password are refused with 422","status":"passed","testResultsByEnv":{"default":"f63f5563a4170e1cbc49fd31f1ac311c"}}
