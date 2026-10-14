@@ -1,0 +1,1 @@
+{"id":"cedb5098e29fd096c8c2c12ade4ead41","fullName":"ui/auth.spec.ts › session › an anonymous visitor is redirected to login when opening a protected page","name":"an anonymous visitor is redirected to login when opening a protected page","status":"passed","testResultsByEnv":{"default":"e16567bfc93cf59445c44e88791116ed"}}
