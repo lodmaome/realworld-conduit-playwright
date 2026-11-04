@@ -74,11 +74,15 @@ never bumps one ([ADR-0002](docs/adr/0002-pin-upstream-app-versions.md), amendme
 ## Quick start
 
 ```bash
-cp .env.example .env
+npm run setup:env
 npm install
 npx playwright install chromium   # add firefox webkit to run the cross-browser smoke
 npm run docker:up
 ```
+
+`setup:env` creates `.env` from `.env.example` and gives the backend a random signing key for its
+JWTs: the pinned backend refuses to start without a real one. It never replaces a key you already
+have, and never prints it ([`tools/ci/setup-env.mjs`](tools/ci/setup-env.mjs)).
 
 This builds and starts the frontend (`http://localhost:4200`) and backend
 (`http://localhost:8080/api`, Swagger at `/swagger`). Containers starting is not the

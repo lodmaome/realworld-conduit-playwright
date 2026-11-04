@@ -10,7 +10,7 @@ Windows, that Docker Desktop is running.
 
 | To                       | Run                                                                                  |
 | ------------------------ | ------------------------------------------------------------------------------------ |
-| Start the app under test | `npm run docker:up`, then `npm run wait-for-app`                                     |
+| Start the app under test | `npm run setup:env` (once), `npm run docker:up`, then `npm run wait-for-app`         |
 | Run a tier               | `npm run test:smoke` / `test:regression` / `test:full`                               |
 | Run one suite            | `npm run test:ui`, `test:api`, `test:a11y`, `test:visual`                            |
 | Static checks            | `npm run typecheck && npm run lint && npm run format:check && npm run check:tags`    |

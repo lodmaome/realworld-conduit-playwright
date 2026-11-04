@@ -80,9 +80,11 @@ jobs:
         if: ${{ env.TIER == 'full' }}
         run: npx playwright install --with-deps firefox webkit
 
+      # Creates .env and gives the backend a random JWT signing key for this run (it refuses to
+      # start without one); the key is never printed. Why it is a script: tools/ci/setup-env.mjs.
       - name: Start the application
         run: |
-          cp .env.example .env
+          npm run setup:env
           npm run docker:up
       - name: Wait for the application
         run: npm run wait-for-app

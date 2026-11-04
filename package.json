@@ -37,6 +37,7 @@
     "test:tools": "node --test \"tools/**/*.test.mjs\"",
     "wait-for-app": "node tools/ci/wait-for-app.mjs",
     "generate:api-types": "node tools/ci/generate-api-types.mjs",
+    "setup:env": "node tools/ci/setup-env.mjs",
     "docker:up": "docker compose --env-file ./.env -f docker/docker-compose.yml up -d --build",
     "docker:down": "docker compose --env-file ./.env -f docker/docker-compose.yml down",
     "docker:logs": "docker compose --env-file ./.env -f docker/docker-compose.yml logs -f"
