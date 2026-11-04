@@ -62,12 +62,34 @@ test.describe('contract validator', () => {
     expect(checkResponse('GET /api/user', 200, {}).ok).toBe(false);
   });
 
-  test('does not require body on an article, because list items omit it', () => {
-    const listItem = omit(article, 'body');
+  // Lists carry article summaries, not whole articles: no `body` and no `comments` (backend
+  // commit 8aa617a; the old backend sent `comments` there, which the old spec allowed).
+  const summary = omit(omit(article, 'body'), 'comments');
 
+  test('accepts a list item that is an article summary, without body or comments', () => {
     expect(
-      checkResponse('GET /api/articles', 200, { articles: [listItem], articlesCount: 1 }).ok,
+      checkResponse('GET /api/articles', 200, { articles: [summary], articlesCount: 1 }).ok,
     ).toBe(true);
+  });
+
+  test('rejects a list item that is missing a key every list item has', () => {
+    const check = checkResponse('GET /api/articles', 200, {
+      articles: [omit(summary, 'slug')],
+      articlesCount: 1,
+    });
+
+    expect(check.ok).toBe(false);
+    expect(check.errors.join()).toContain("required property 'slug'");
+  });
+
+  test('rejects a list item that carries a body, which only a single article has', () => {
+    const check = checkResponse('GET /api/articles', 200, {
+      articles: [article],
+      articlesCount: 1,
+    });
+
+    expect(check.ok).toBe(false);
+    expect(check.errors.join()).toContain('"body"');
   });
 
   test('rejects a malformed date-time', () => {

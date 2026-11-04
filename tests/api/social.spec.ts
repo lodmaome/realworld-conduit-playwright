@@ -92,6 +92,30 @@ test.describe('favorites', () => {
     expect(unknown.status).toBe(404);
     expect(bodyOf<ErrorBody>(unknown).errors).toEqual({ article: ['not found'] });
   });
+
+  // Upstream issue #144: `favorited` was true for every viewer once anyone had favorited the
+  // article, until the fix in #149. The count was always the total for everyone.
+  test('"favorited" is true only for the viewer who favorited it, and the count is the total', async ({
+    apiClient,
+    userFactory,
+    articleFactory,
+  }) => {
+    const [author, fan, bystander] = [
+      await userFactory(),
+      await userFactory(),
+      await userFactory(),
+    ];
+    const article = await articleFactory(author);
+    await apiClient.send('POST', `articles/${article.slug}/favorite`, { token: fan.token });
+    const seenBy = async (token?: string) =>
+      bodyOf<ArticleBody>(await apiClient.send('GET', `articles/${article.slug}`, { token }))
+        .article;
+
+    expect(await seenBy(fan.token)).toMatchObject({ favorited: true, favoritesCount: 1 });
+    expect(await seenBy(bystander.token)).toMatchObject({ favorited: false, favoritesCount: 1 });
+    expect(await seenBy(author.token)).toMatchObject({ favorited: false, favoritesCount: 1 });
+    expect(await seenBy()).toMatchObject({ favorited: false, favoritesCount: 1 });
+  });
 });
 
 test.describe('following', () => {
@@ -199,30 +223,6 @@ test.describe('known backend defects: social', () => {
 
     expect(res.status).toBe(200);
     expect(bodyOf<ProfileBody>(res).profile.following).toBe(true);
-  });
-
-  test('"favorited" is true for everyone once anyone has favorited the article', async ({
-    apiClient,
-    userFactory,
-    articleFactory,
-  }) => {
-    knownIssue('The favorited flag reflects whether anyone favorited, not the viewer.');
-    const [author, fan, bystander] = [
-      await userFactory(),
-      await userFactory(),
-      await userFactory(),
-    ];
-    const article = await articleFactory(author);
-    await apiClient.send('POST', `articles/${article.slug}/favorite`, { token: fan.token });
-    const seenBy = async (token?: string) =>
-      bodyOf<ArticleBody>(await apiClient.send('GET', `articles/${article.slug}`, { token }))
-        .article.favorited;
-
-    // Only the fan should see true. All of them do.
-    expect(await seenBy(fan.token)).toBe(true);
-    expect(await seenBy(bystander.token)).toBe(true);
-    expect(await seenBy(author.token)).toBe(true);
-    expect(await seenBy()).toBe(true);
   });
 
   test('a single article says its author is not followed, though the list and the profile say so', async ({

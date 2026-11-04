@@ -800,8 +800,7 @@
             }
           },
           "favorited": {
-            "type": "boolean",
-            "readOnly": true
+            "type": "boolean"
           },
           "favoritesCount": {
             "type": "integer",
@@ -881,13 +880,55 @@
         },
         "additionalProperties": false
       },
+      "Conduit.Features.Articles.ArticleSummary": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "tagList": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "favorited": {
+            "type": "boolean"
+          },
+          "favoritesCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "author": {
+            "$ref": "#/components/schemas/Conduit.Features.Profiles.Profile"
+          }
+        },
+        "additionalProperties": false
+      },
       "Conduit.Features.Articles.ArticlesEnvelope": {
         "type": "object",
         "properties": {
           "articles": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Conduit.Domain.Article"
+              "$ref": "#/components/schemas/Conduit.Features.Articles.ArticleSummary"
             }
           },
           "articlesCount": {

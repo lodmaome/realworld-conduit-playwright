@@ -1,6 +1,12 @@
 import { buildUser } from '@factories/user-factory';
 import { expect, test } from '../fixtures/base';
-import { bodyOf, knownIssue, type ErrorBody, type UserBody } from '../support/api-shapes';
+import {
+  bodyOf,
+  knownIssue,
+  type ArticleBody,
+  type ErrorBody,
+  type UserBody,
+} from '../support/api-shapes';
 import { expectContract } from '../support/contract';
 
 test.describe('registration', () => {
@@ -281,6 +287,32 @@ test.describe('updating the account', () => {
     const current = await apiClient.send('GET', 'user', { token: fresh });
     expect(bodyOf<UserBody>(current).user.username).toBe(username);
   });
+
+  // Upstream issue #143: a token issued before a rename gave 404 on a read and an unhandled 500 on
+  // a write until the fix in #151, which identifies the user by id and not by name.
+  test('a token from before a username change keeps working, under the new name', async ({
+    apiClient,
+    userFactory,
+  }) => {
+    const user = await userFactory();
+    const username = buildUser().username;
+    const renamed = await apiClient.send('PUT', 'user', {
+      token: user.token,
+      data: { user: { username } },
+    });
+    expect(renamed.status).toBe(200);
+
+    const read = await apiClient.send('GET', 'user', { token: user.token });
+    const write = await apiClient.send('POST', 'articles', {
+      token: user.token,
+      data: { article: { title: 'stale token', description: 'd', body: 'b' } },
+    });
+
+    expect(read.status).toBe(200);
+    expect(bodyOf<UserBody>(read).user.username).toBe(username);
+    expect(write.status).toBe(201);
+    expect(bodyOf<ArticleBody>(write).article.author.username).toBe(username);
+  });
 });
 
 // The tests below pin backend defects as observed on 2026-09-25 (docs/findings.md). Each asserts
@@ -332,29 +364,5 @@ test.describe('known backend defects: accounts', () => {
     const res = await apiClient.send('GET', 'user', { token: 'not-a-token' });
 
     expect(res.body).toEqual({ errors: { token: ['is missing'] } });
-  });
-
-  test('a token from before a username change stops working, and creating an article with it is a 500', async ({
-    apiClient,
-    userFactory,
-  }) => {
-    knownIssue('Tokens name the user, so renaming orphans them: 404 on /user and 500 on writes.');
-    const user = await userFactory();
-    const renamed = await apiClient.send('PUT', 'user', {
-      token: user.token,
-      data: { user: { username: buildUser().username } },
-    });
-    expect(renamed.status).toBe(200);
-
-    const read = await apiClient.send('GET', 'user', { token: user.token });
-    const write = await apiClient.send('POST', 'articles', {
-      token: user.token,
-      data: { article: { title: 'stale token', description: 'd', body: 'b' } },
-    });
-
-    expect(read.status).toBe(404);
-    expect(read.body).toEqual({ errors: { user: ['not found'] } });
-    expect(write.status).toBe(500);
-    expect(write.body).toEqual({ errors: 'InternalServerError' });
   });
 });

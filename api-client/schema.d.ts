@@ -657,7 +657,7 @@ export interface components {
             body?: string | null;
             author?: components["schemas"]["Conduit.Domain.Person"];
             comments?: components["schemas"]["Conduit.Domain.Comment"][];
-            readonly favorited?: boolean;
+            favorited?: boolean;
             /** Format: int32 */
             readonly favoritesCount?: number;
             readonly tagList?: string[];
@@ -685,8 +685,22 @@ export interface components {
         "Conduit.Features.Articles.ArticleEnvelope": {
             article?: components["schemas"]["Conduit.Domain.Article"];
         };
+        "Conduit.Features.Articles.ArticleSummary": {
+            slug?: string | null;
+            title?: string | null;
+            description?: string | null;
+            tagList?: string[];
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            favorited?: boolean;
+            /** Format: int32 */
+            favoritesCount?: number;
+            author?: components["schemas"]["Conduit.Features.Profiles.Profile"];
+        };
         "Conduit.Features.Articles.ArticlesEnvelope": {
-            articles?: components["schemas"]["Conduit.Domain.Article"][];
+            articles?: components["schemas"]["Conduit.Features.Articles.ArticleSummary"][];
             /** Format: int32 */
             articlesCount?: number;
         };

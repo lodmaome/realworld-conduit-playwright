@@ -99,6 +99,20 @@ test.describe('creating an article', () => {
     expectContract('GET /api/tags', tags, { source: 'openapi' });
     expect(bodyOf<TagsBody>(tags).tags).toEqual(expect.arrayContaining(tagList));
   });
+
+  // Upstream issue #141: a repeated tag was an unhandled 500 until the fix in #146.
+  test('stores a tag that is repeated in one request once', async ({ apiClient, userFactory }) => {
+    const author = await userFactory();
+    const tag = buildTag();
+
+    const res = await apiClient.send('POST', 'articles', {
+      token: author.token,
+      data: { article: buildArticle({ tagList: [tag, tag] }) },
+    });
+
+    expect(res.status).toBe(201);
+    expect(bodyOf<ArticleBody>(res).article.tagList).toEqual([tag]);
+  });
 });
 
 test.describe('reading an article', () => {
@@ -209,6 +223,33 @@ test.describe('updating an article', () => {
     expect(anonymous.status).toBe(401);
     expect(unknown.status).toBe(404);
   });
+
+  // Upstream issue #142: a tag the database had not seen was an unhandled 500 on edit until the
+  // fix in #147, while an existing tag worked. Both halves are kept so the pair stays visible.
+  test('accepts a new tag and an existing one, and lists the new one', async ({
+    apiClient,
+    userFactory,
+    articleFactory,
+  }) => {
+    const author = await userFactory();
+    const [existing, brandNew] = [buildTag(), buildTag()];
+    const created = await articleFactory(author, { tagList: [buildTag()] });
+    await articleFactory(author, { tagList: [existing] });
+    const edit = (tagList: string[]) =>
+      apiClient.send('PUT', `articles/${created.slug}`, {
+        token: author.token,
+        data: { article: { tagList } },
+      });
+
+    const withNewTag = await edit([brandNew]);
+    const withExistingTag = await edit([existing]);
+    const tags = await apiClient.send('GET', 'tags');
+
+    expect(withNewTag.status).toBe(200);
+    expect(bodyOf<ArticleBody>(withNewTag).article.tagList).toEqual([brandNew]);
+    expect(withExistingTag.status).toBe(200);
+    expect(bodyOf<TagsBody>(tags).tags).toEqual(expect.arrayContaining([brandNew, existing]));
+  });
 });
 
 test.describe('deleting an article', () => {
@@ -257,48 +298,6 @@ test.describe('deleting an article', () => {
 
 // Backend defects as observed on 2026-09-25 (docs/findings.md); each fails, on purpose, once fixed.
 test.describe('known backend defects: articles', () => {
-  test('the same tag twice in one request is a 500', async ({ apiClient, userFactory }) => {
-    knownIssue('A duplicate tag in tagList crashes article creation with an unhandled 500.');
-    const author = await userFactory();
-    const tag = buildTag();
-
-    const res = await apiClient.send('POST', 'articles', {
-      token: author.token,
-      data: { article: buildArticle({ tagList: [tag, tag] }) },
-    });
-
-    expect(res.status).toBe(500);
-    expect(res.body).toEqual({ errors: 'InternalServerError' });
-  });
-
-  test('adding a new tag while editing is a 500, though adding an existing one works', async ({
-    apiClient,
-    userFactory,
-    articleFactory,
-  }) => {
-    knownIssue(
-      'Editing with a tag the database has not seen fails with a foreign-key error (an unhandled 500).',
-    );
-    const author = await userFactory();
-    const [existing, brandNew] = [buildTag(), buildTag()];
-    const created = await articleFactory(author, { tagList: [buildTag()] });
-    await articleFactory(author, { tagList: [existing] });
-    const edit = (tagList: string[]) =>
-      apiClient.send('PUT', `articles/${created.slug}`, {
-        token: author.token,
-        data: { article: { tagList } },
-      });
-
-    const withNewTag = await edit([brandNew]);
-    const withExistingTag = await edit([existing]);
-
-    expect(withNewTag.status).toBe(500);
-    expect(withNewTag.body).toEqual({ errors: 'InternalServerError' });
-    // The other half of the same operation succeeds, which is what makes the failure look like a
-    // missing insert of the new tag and not a refusal to edit tags at all.
-    expect(withExistingTag.status).toBe(200);
-  });
-
   test('a blank title on update is ignored, though on create it is a 422', async ({
     apiClient,
     userFactory,
