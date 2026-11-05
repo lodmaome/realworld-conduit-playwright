@@ -44,7 +44,9 @@ upstream no longer has the pinned commit; it closes the issue when the pins are 
 reports. To check by hand: `GITHUB_TOKEN=$(gh auth token) node tools/ci/pin-drift.mjs` (without a token
 GitHub allows 60 requests an hour), `--pin backend=<sha>` to see the gap to a commit you are
 considering, and a manual dispatch of the workflow with "open_issue" unticked is a dry run
-([ADR-0002](adr/0002-pin-upstream-app-versions.md), amendment).
+([ADR-0002](adr/0002-pin-upstream-app-versions.md), amendment). A pin can also need a bump because the
+build broke, with no new upstream commit involved: the nightly run is what shows that, not this check
+(ADR-0002, second amendment).
 
 1. Find the new SHA on the upstream default branch (`main` for the frontend, `master` for the
    backend) and change it in the compose file.
@@ -59,9 +61,11 @@ considering, and a manual dispatch of the workflow with "open_issue" unticked is
    This must print nothing and exit 1. The same command with `localhost:8080/api` must print a
    file. (The `sh -c` matters on Windows: Git Bash otherwise rewrites the container path.)
 
-3. **Backend:** re-read `src/Conduit/Program.cs` for the database wiring. If upstream has
-   re-enabled the environment-variable provider switch, [ADR-0006](adr/0006-backend-database-provider.md)
-   needs revisiting. Then `npm run generate:api-types`, which rewrites both `api-client/openapi.json`
+3. **Backend:** if the container exits right after `docker:up`, read `docker logs docker-backend-1`: a
+   new upstream version can need new configuration (the move to `8aa617a` needed a JWT signing key,
+   [ADR-0017](adr/0017-env-and-jwt-signing-key-setup.md)). Re-read `src/Conduit/Program.cs` and
+   `ServicesExtensions.cs` for the database wiring; the provider is now chosen by configuration
+   ([ADR-0006](adr/0006-backend-database-provider.md), amendment). Then `npm run generate:api-types`, which rewrites both `api-client/openapi.json`
    and `schema.d.ts`; review the diff of both: a contract change is meant to show up there.
    **Don't skip the regeneration**: the coverage-gap flagger can only see a changed endpoint through
    `schema.d.ts`, and warns on a pull request that moves the backend pin without touching it. The API

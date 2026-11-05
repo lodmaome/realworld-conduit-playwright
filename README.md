@@ -21,12 +21,12 @@ controls the test environment.
 | Browsers               | Chromium for the whole suite; the `ui` smoke tests also run in Firefox and WebKit ([ADR-0016](docs/adr/0016-cross-browser-smoke.md)) | Chromium, Firefox and WebKit                                                                                                                                                                                                     |
 | Emphasis               | A controlled, reproducible environment; decision records with evidence; flake handling; tiered CI                                    | Its own [architecture](https://github.com/lodmaome/playwright-qa-portfolio/blob/main/docs/ARCHITECTURE.md), [strategy](https://github.com/lodmaome/playwright-qa-portfolio/blob/main/docs/TEST-STRATEGY.md) and environment docs |
 
-**Status: API, UI, mocked-UI, visual, accessibility and cross-browser smoke suites (229 tests), tiered CI, a published report with trend history, flake handling, a PR coverage-gap flagger, and a weekly upstream pin-drift check are in place.** Nothing in the v1 scope is outstanding. The `ui-mocked` project (43 tests) covers the failure paths of every page; what it doesn't cover is listed in the [test strategy](docs/test-strategy.md).
+**Status: API, UI, mocked-UI, visual, accessibility and cross-browser smoke suites (231 tests), tiered CI, a published report with trend history, flake handling, a PR coverage-gap flagger, and a weekly upstream pin-drift check are in place.** Nothing in the v1 scope is outstanding. The `ui-mocked` project (43 tests) covers the failure paths of every page; what it doesn't cover is listed in the [test strategy](docs/test-strategy.md).
 
 - **Live report:** <https://lodmaome.github.io/realworld-conduit-playwright/> (Allure, with trends)
 - **Flake dashboard:** <https://lodmaome.github.io/realworld-conduit-playwright/flakes/> (published after each run on `main`)
 - **[Test strategy](docs/test-strategy.md)** — what is tested, how, and the known limitations
-- **[Findings](docs/findings.md)** — the 19 defects and gaps this suite found in the app, each with a reproduction
+- **[Findings](docs/findings.md)** — the 19 defects and gaps this suite found in the app, each with a reproduction (four have since been fixed upstream)
 - **[How this was built](docs/how-this-was-built.md)** — the AI-assisted process, who did what, and how it was checked
 - **[Architecture decisions](docs/adr/README.md)** — read before changing anything that would contradict them
 - **[Maintenance runbook](docs/maintenance.md)** — bumping pins, quarantining a test, troubleshooting
@@ -37,7 +37,8 @@ controls the test environment.
 **With five minutes**
 
 1. **[Findings](docs/findings.md)**: what the suite found in the app, with a reproduction for each. Four were
-   reported upstream (`realworld-apps/aspnetcore-realworld-example-app` #141 to #144).
+   reported upstream (`realworld-apps/aspnetcore-realworld-example-app` #141 to #144) and have been fixed
+   there.
 2. **[Test strategy](docs/test-strategy.md)**: the whole picture on one page: the suites, the tiers, what is
    deliberately not done, and the known limits, stated plainly.
 3. **[The live report](https://lodmaome.github.io/realworld-conduit-playwright/)** and the
@@ -66,8 +67,10 @@ Both are built from their upstream source at a pinned commit (see
 [ADR-0002](docs/adr/0002-pin-upstream-app-versions.md)), not vendored into this repo.
 The frontend needs a small patch to point it at a self-hosted backend — see
 [ADR-0005](docs/adr/0005-frontend-custom-docker-build.md) before assuming a routine
-Docker setup. The backend currently only runs against SQLite regardless of its own
-`docker-compose.yml` — see [ADR-0006](docs/adr/0006-backend-database-provider.md).
+Docker setup. The backend runs against its SQLite default; since the pin moved on 2026-11-04 its
+database provider can be chosen by configuration — see
+[ADR-0006](docs/adr/0006-backend-database-provider.md) (amendment). It also needs a JWT signing key,
+which `npm run setup:env` makes — see [ADR-0017](docs/adr/0017-env-and-jwt-signing-key-setup.md).
 A weekly check reports when a pin has fallen behind its upstream for long enough to look at, and
 never bumps one ([ADR-0002](docs/adr/0002-pin-upstream-app-versions.md), amendment).
 

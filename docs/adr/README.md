@@ -27,3 +27,4 @@ place with its status updated.
 | [0014](0014-pr-coverage-gap-flagger.md)                  | A PR coverage-gap flagger built on the API contract and recorded traffic          | Accepted |
 | [0015](0015-validate-responses-against-the-contract.md)  | Validate real responses against the OpenAPI contract, and supplement its gaps     | Accepted |
 | [0016](0016-cross-browser-smoke.md)                      | Cross-browser smoke: the `ui` smoke tests in Firefox and WebKit, in the full tier | Accepted |
+| [0017](0017-env-and-jwt-signing-key-setup.md)            | Create `.env` and the backend's JWT signing key with one script                   | Accepted |

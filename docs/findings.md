@@ -1,41 +1,50 @@
 # Findings: defects and gaps found in the application under test
 
-What this test suite found in the RealWorld "Conduit" app, with how to reproduce each item. All of it
-was observed on **2026-09-25** against the pinned versions:
+What this test suite found in the RealWorld "Conduit" app, with how to reproduce each item. The items
+were first observed on **2026-09-25** against the pinned versions:
 
 - backend `realworld-apps/aspnetcore-realworld-example-app` at `a397d1197b22edeffa4d2563fa5f4f7f11d0b254`
 - frontend `realworld-apps/angular-realworld-example-app` at `dd99ed2cf39c805d719f943c5d7061a5683d98a8`
 
-Every item is **pinned by a test** that asserts the behaviour as observed and carries a `known-issue`
-annotation, so it is a regression check today and fails on purpose the day the app is fixed (see
-[ADR-0013](adr/0013-api-overrides-for-the-mocked-ui-project.md) and
-[ADR-0015](adr/0015-validate-responses-against-the-contract.md)). Four of the backend items were
-reported upstream on 2026-09-25 (B1, B2, B5 and B8, in the table below); the rest have not been.
+**The backend pin has since moved** to `8aa617abed5dd645f8f9d99578a3e07b4e2e52e7`, for a build failure
+that had nothing to do with these items ([ADR-0002](adr/0002-pin-upstream-app-versions.md), amendment of
+2026-11-05). Upstream had fixed the four items reported on 2026-09-25 (B1, B2, B5 and B8, issues #141 to
+#144, all closed on 2026-10-06), and the new pin carries the fixes. Those four are marked **Fixed
+upstream** below, and their tests are now ordinary regression tests. Every other backend item was
+re-checked by running its test on the new pin, and still holds. The frontend pin did not move, so the
+frontend items are as observed on 2026-09-25.
+
+Every open item is **pinned by a test** that asserts the behaviour as observed and carries a
+`known-issue` annotation, so it is a regression check today and fails on purpose the day the app is
+fixed (see [ADR-0013](adr/0013-api-overrides-for-the-mocked-ui-project.md) and
+[ADR-0015](adr/0015-validate-responses-against-the-contract.md)). That is how the four fixed items
+were noticed: their tests failed on the new pin and were rewritten to assert the fix. The ones that
+were reported upstream are the ones that have been fixed; the rest have not been reported.
 
 This is a list of what was found, not a security review. Severity is not assigned: an "impact" line says
 what a user would see, and reading it is left to the reader.
 
-| ID  | Where    | Finding                                                                                                                                                                  |
-| --- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| B1  | backend  | A duplicate tag in `tagList` on create is an unhandled `500` ([#141](https://github.com/realworld-apps/aspnetcore-realworld-example-app/issues/141))                     |
-| B2  | backend  | Adding a new tag while editing an article is an unhandled `500` ([#142](https://github.com/realworld-apps/aspnetcore-realworld-example-app/issues/142))                  |
-| B3  | backend  | Email addresses are not validated                                                                                                                                        |
-| B4  | backend  | Email uniqueness is case-sensitive                                                                                                                                       |
-| B5  | backend  | A token stops working after its user is renamed: `404` on reads, `500` on writes ([#143](https://github.com/realworld-apps/aspnetcore-realworld-example-app/issues/143)) |
-| B6  | backend  | An invalid token is reported as a missing one                                                                                                                            |
-| B7  | backend  | A user can follow themselves                                                                                                                                             |
-| B8  | backend  | `favorited` is true for every viewer once anyone has favorited an article ([#144](https://github.com/realworld-apps/aspnetcore-realworld-example-app/issues/144))        |
-| B9  | backend  | `author.following` is always false on a single-article `GET`                                                                                                             |
-| B10 | backend  | A blank title is ignored on update but rejected on create                                                                                                                |
-| B11 | backend  | A negative `limit` or `offset` is accepted, while `abc` and `2.5` are refused                                                                                            |
-| S1  | OpenAPI  | The spec declares only `200`, no body for five operations, and no required fields                                                                                        |
-| F1  | frontend | A failed request for a list leaves "Loading articles..." on screen for good                                                                                              |
-| F2  | frontend | A failed tags request leaves "Loading tags..." on screen for good                                                                                                        |
-| F3  | frontend | An unknown article, or a failed comments request, blanks the whole article page                                                                                          |
-| F4  | frontend | A profile that can't be loaded renders a blank page                                                                                                                      |
-| F5  | frontend | Editing an article that doesn't exist opens an empty editor with no error                                                                                                |
-| F6  | frontend | A failed follow, favorite or article delete tells the user nothing                                                                                                       |
-| F7  | frontend | A long unbroken word makes the page scroll sideways                                                                                                                      |
+| ID  | Where    | Finding                                                                                                                                                                  | Status         |
+| --- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------- |
+| B1  | backend  | A duplicate tag in `tagList` on create is an unhandled `500` ([#141](https://github.com/realworld-apps/aspnetcore-realworld-example-app/issues/141))                     | Fixed upstream |
+| B2  | backend  | Adding a new tag while editing an article is an unhandled `500` ([#142](https://github.com/realworld-apps/aspnetcore-realworld-example-app/issues/142))                  | Fixed upstream |
+| B3  | backend  | Email addresses are not validated                                                                                                                                        | Open           |
+| B4  | backend  | Email uniqueness is case-sensitive                                                                                                                                       | Open           |
+| B5  | backend  | A token stops working after its user is renamed: `404` on reads, `500` on writes ([#143](https://github.com/realworld-apps/aspnetcore-realworld-example-app/issues/143)) | Fixed upstream |
+| B6  | backend  | An invalid token is reported as a missing one                                                                                                                            | Open           |
+| B7  | backend  | A user can follow themselves                                                                                                                                             | Open           |
+| B8  | backend  | `favorited` is true for every viewer once anyone has favorited an article ([#144](https://github.com/realworld-apps/aspnetcore-realworld-example-app/issues/144))        | Fixed upstream |
+| B9  | backend  | `author.following` is always false on a single-article `GET`                                                                                                             | Open           |
+| B10 | backend  | A blank title is ignored on update but rejected on create                                                                                                                | Open           |
+| B11 | backend  | A negative `limit` or `offset` is accepted, while `abc` and `2.5` are refused                                                                                            | Open           |
+| S1  | OpenAPI  | The spec declares only `200`, no body for five operations, and no required fields                                                                                        | Open           |
+| F1  | frontend | A failed request for a list leaves "Loading articles..." on screen for good                                                                                              | Open           |
+| F2  | frontend | A failed tags request leaves "Loading tags..." on screen for good                                                                                                        | Open           |
+| F3  | frontend | An unknown article, or a failed comments request, blanks the whole article page                                                                                          | Open           |
+| F4  | frontend | A profile that can't be loaded renders a blank page                                                                                                                      | Open           |
+| F5  | frontend | Editing an article that doesn't exist opens an empty editor with no error                                                                                                | Open           |
+| F6  | frontend | A failed follow, favorite or article delete tells the user nothing                                                                                                       | Open           |
+| F7  | frontend | A long unbroken word makes the page scroll sideways                                                                                                                      | Open           |
 
 ## Backend
 
@@ -52,6 +61,12 @@ token() { register "$1" | node -pe 'JSON.parse(require("fs").readFileSync(0)).us
 
 ### B1. A duplicate tag on create is an unhandled `500`
 
+> **Fixed upstream.** Reported as [#141](https://github.com/realworld-apps/aspnetcore-realworld-example-app/issues/141),
+> fixed in [#146](https://github.com/realworld-apps/aspnetcore-realworld-example-app/pull/146) and merged
+> on 2026-10-06. On the pin `8aa617a` the request below answers `201` and the tag is stored once (probed
+> on 2026-11-04). The test is now an ordinary regression test, in `tests/api/articles.spec.ts` (creating
+> an article). What follows is the behaviour on `a397d11`, kept as the record.
+
 ```bash
 T=$(token alice1)
 curl -s -w ' -> %{http_code}\n' -X POST $BASE/articles -H "$H" -H "Authorization: Token $T" \
@@ -64,9 +79,15 @@ one request fails, whether the tag is new or existing. **Impact:** a client that
 gets a server error, and the body is a string where every other error is `{ errors: { field: [...] } }`.
 Backend log: `InvalidOperationException: The instance of entity type 'ArticleTag' cannot be tracked because
 another instance with the same key value for {'ArticleId', 'TagId'} is already being tracked`.
-Pinned in `tests/api/articles.spec.ts` (known backend defects: articles).
+It was pinned by a `known-issue` test in `tests/api/articles.spec.ts` until the pin moved.
 
 ### B2. Adding a new tag while editing an article is an unhandled `500`
+
+> **Fixed upstream.** Reported as [#142](https://github.com/realworld-apps/aspnetcore-realworld-example-app/issues/142),
+> fixed in [#147](https://github.com/realworld-apps/aspnetcore-realworld-example-app/pull/147) and merged
+> on 2026-10-06. On the pin `8aa617a` the edit below answers `200`, the article carries the new tag, and
+> `GET /tags` lists it (probed on 2026-11-04). The test is now an ordinary regression test, in
+> `tests/api/articles.spec.ts` (updating an article). What follows is the behaviour on `a397d11`.
 
 ```bash
 SLUG=$(curl -s -X POST $BASE/articles -H "$H" -H "Authorization: Token $T" \
@@ -83,7 +104,7 @@ constraint failed'` on the insert into `ArticleTags`. Upstream issue
 [#92](https://github.com/realworld-apps/aspnetcore-realworld-example-app/issues/92) (closed 2022) was
 the mirror image, a `UNIQUE constraint failed` when adding an _existing_ tag, so its fix may have
 swapped one failure for the other. **Impact:** a tag can't be introduced when an article is edited.
-Pinned in `tests/api/articles.spec.ts`.
+It was pinned by a `known-issue` test in `tests/api/articles.spec.ts` until the pin moved.
 
 ### B3. Email addresses are not validated
 
@@ -103,6 +124,15 @@ can hold several accounts with the same address. Pinned in `tests/api/auth.spec.
 
 ### B5. A token stops working after its user is renamed
 
+> **Fixed upstream.** Reported as [#143](https://github.com/realworld-apps/aspnetcore-realworld-example-app/issues/143),
+> fixed in [#151](https://github.com/realworld-apps/aspnetcore-realworld-example-app/pull/151) and merged
+> on 2026-10-06. That change replaced the legacy token scheme with a versioned one that identifies the
+> user by id, not by name. On the pin `8aa617a` the pre-rename token keeps working: the read below
+> answers `200` with the new username, and the write answers `201` with the author under the new name
+> (probed on 2026-11-04). The backend now refuses to start without a signing key
+> ([ADR-0017](adr/0017-env-and-jwt-signing-key-setup.md)). The test is now an ordinary regression test,
+> in `tests/api/auth.spec.ts` (updating the account). What follows is the behaviour on `a397d11`.
+
 `PUT /user` with a new `username` returns a fresh token, but the old token, which names the old
 username, is orphaned:
 
@@ -118,8 +148,8 @@ curl -s -w ' -> %{http_code}\n' -X POST $BASE/articles -H "$H" -H "Authorization
 
 Backend log for the `500`: `System.InvalidOperationException: Sequence contains no elements`, most
 likely a lookup of the user by the token's old username. **Impact:** another session left signed in
-on the old name gets a `404` reading its account and a `500` writing. Pinned in
-`tests/api/auth.spec.ts`.
+on the old name gets a `404` reading its account and a `500` writing. It was pinned by a `known-issue`
+test in `tests/api/auth.spec.ts` until the pin moved.
 
 ### B6. An invalid token is reported as a missing one
 
@@ -139,6 +169,14 @@ curl -s -X POST $BASE/profiles/erin1/follow -H "Authorization: Token $(token eri
 
 ### B8. `favorited` is true for every viewer once anyone has favorited an article
 
+> **Fixed upstream.** Reported as [#144](https://github.com/realworld-apps/aspnetcore-realworld-example-app/issues/144),
+> fixed in [#149](https://github.com/realworld-apps/aspnetcore-realworld-example-app/pull/149) and merged
+> on 2026-10-06. On the pin `8aa617a` only the user who favorited the article sees `true`; the author,
+> another user and an anonymous caller see `false`, and `favoritesCount` stays the total (probed on the
+> single-article `GET` on 2026-11-04; the fix PR says lists, the feed and the favorite responses were
+> changed too, which this suite does not check). The test is now an ordinary regression test, in
+> `tests/api/social.spec.ts` (favorites). What follows is the behaviour on `a397d11`.
+
 After one user favorites an article, the flag is `true` for anonymous callers, the author, and users who
 never favorited it, on `GET /articles/{slug}` and in lists. It is `false` again only when the count
 returns to 0. `favoritesCount` is right.
@@ -153,7 +191,8 @@ curl -s $BASE/articles/$SLUG | node -pe 'JSON.parse(require("fs").readFileSync(0
 ```
 
 **Impact:** a client that reads the flag shows every reader an article as "favorited by you" that they
-did not favorite. Pinned in `tests/api/social.spec.ts`.
+did not favorite. It was pinned by a `known-issue` test in `tests/api/social.spec.ts` until the pin
+moved.
 
 ### B9. `author.following` is always false on a single-article `GET`
 
