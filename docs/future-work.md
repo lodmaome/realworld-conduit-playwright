@@ -74,8 +74,16 @@ Grounded in what is open now, most useful first. None is required for the v1 sco
    ([0014](adr/0014-pr-coverage-gap-flagger.md)). If gaps start being ignored, `--fail-on-gap` exists,
    and a pull-request comment would be more visible than a job summary.
 4. **Watch the upstream issues** (small, recurring). Four defects were reported upstream
-   (`realworld-apps/aspnetcore-realworld-example-app` #141 to #144). When one is fixed, bump the pin and
+   (`realworld-apps/aspnetcore-realworld-example-app` #141 to #144), and all four were fixed on
+   2026-10-06; the backend pin moved on 2026-11-04 and their tests now assert the fix. The other pinned
+   defects (B3, B4, B6, B7, B9 to B11 in the [findings](findings.md)) have not been reported. Upstream's
+   latest commits include "wrong email format as 422" (2026-11-02), which looks like B3; it is not in
+   the current pin and has not been checked against this suite. When one is fixed, bump the pin and
    rewrite its `known-issue` test to assert the fix, as the [runbook](maintenance.md) describes.
+5. **Be told when the nightly run goes red** (small). It was red for 21 scheduled runs in a row from
+   2026-10-15, and for a 22nd on 2026-11-05 ([0002](adr/0002-pin-upstream-app-versions.md), amendment).
+   Nothing was decided about alerting, and the same class of failure can come back: the backend build
+   reads advisory data and image tags that a pin does not hold.
 
 ## Verification still owed
 

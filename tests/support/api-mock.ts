@@ -7,6 +7,7 @@ type Schemas = components['schemas'];
 // Typed from the generated OpenAPI schema, so a stub can't silently drift from the
 // shapes the real API returns (docs/adr/0001-api-mocking-strategy.md).
 export type StubArticle = Schemas['Conduit.Domain.Article'];
+type ArticleSummary = Schemas['Conduit.Features.Articles.ArticleSummary'];
 export type StubComment = Schemas['Conduit.Domain.Comment'];
 export type StubProfile = Schemas['Conduit.Features.Profiles.Profile'];
 // The client's User, not the raw generated one: the token is always present on a real response.
@@ -88,6 +89,17 @@ function overrideFor(config: ApiMockConfig, method: string, url: URL): ApiOverri
   );
 }
 
+/**
+ * A list item. Since the backend commit 8aa617a the API sends an ArticleSummary in lists, without
+ * `body` or `comments`, and the contract forbids both there. Only a single article has them.
+ * tests/api/stubs-match-contract.spec.ts fails if the stubs drift from this again.
+ */
+function summaryOf(article: StubArticle): ArticleSummary {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- dropping them is the point
+  const { body: _body, comments: _comments, ...summary } = article;
+  return summary;
+}
+
 function pageOf(articles: StubArticle[], url: URL): Stubbed {
   const tag = url.searchParams.get('tag');
   const author = url.searchParams.get('author');
@@ -98,7 +110,10 @@ function pageOf(articles: StubArticle[], url: URL): Stubbed {
     (article) =>
       (!tag || article.tagList?.includes(tag)) && (!author || article.author?.username === author),
   );
-  return ok({ articles: matching.slice(offset, offset + limit), articlesCount: matching.length });
+  return ok({
+    articles: matching.slice(offset, offset + limit).map(summaryOf),
+    articlesCount: matching.length,
+  });
 }
 
 export function stubFor(config: ApiMockConfig, url: URL): Stubbed | undefined {

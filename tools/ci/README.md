@@ -8,6 +8,12 @@ Small, dependency-free Node scripts the CI workflow (and developers) call throug
   rules are in `tools/flake-report/validate.mjs`. Tag-based selection
   fails silently on a typo, so this is what stands between `@smoek` and a test quietly
   dropping out of the smoke gate. It doesn't need the application running.
+- `setup-env.mjs` (`npm run setup:env`) — creates `.env` from `.env.example` if it is missing and
+  makes sure `JWT_SIGNING_KEY` has a value: the pinned backend refuses to start without a real
+  signing key (base64, at least 32 random bytes), so there is no default to commit and every
+  machine and CI run makes its own. A key already there is left exactly as it is, so it is safe to
+  re-run; the key goes to `.env` only, and is never printed. CI and the README both call it, so
+  how a key is made lives here and nowhere else.
 - `wait-for-app.mjs` (`npm run wait-for-app`) — blocks until the backend and frontend both
   answer, or fails naming which one didn't and why. Polled from outside because we don't
   control the upstream images and can't add a compose `HEALTHCHECK` to them.

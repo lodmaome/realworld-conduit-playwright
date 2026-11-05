@@ -68,3 +68,22 @@ env-based provider switching.
   meaningfully closer to forking the app than adapting it. The correctness need
   (test isolation) is already met by factories regardless of DB engine; this would
   only buy write throughput we haven't shown we need yet.
+
+## Amendment, 2026-11-05: upstream finished the wiring
+
+The Negative consequences above name the condition for revisiting this: "bump to a future commit if
+upstream finishes the DB-provider wiring". The backend pin moved to upstream `8aa617a` on 2026-11-04
+([0002](0002-pin-upstream-app-versions.md), amendment), and that condition is now met.
+
+**What changed.** The `Program.cs` lines quoted in the Context are gone. `Program.cs` now calls
+`AddConduitDatabase(configuration)`, and `ServicesExtensions.cs` reads the provider from
+`Database:Provider` (or `Conduit_DatabaseProvider`) and the connection string from
+`ConnectionStrings:Conduit` (or `Conduit_ConnectionString`). The provider defaults to `sqlite`
+(`Data Source=realworld.db`), and there is a `sqlserver` branch. This was read from the source on
+GitHub. The `sqlserver` branch was not run.
+
+**What stays.** The decision stands. `docker/docker-compose.yml` sets no database variables, so the
+backend runs on its SQLite default, and nothing here has measured SQLite's single-writer lock as a
+bottleneck, so there is still no evidence for changing it. What no longer holds is the premise that "the
+pinned commit can only run against SQLite": switching is now a matter of configuration, not of patching
+the backend. That makes the first alternative above moot, and it removes the main reason it was rejected.

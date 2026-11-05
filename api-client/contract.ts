@@ -30,9 +30,10 @@ const ref = (name: string) => ({ $ref: `#/components/schemas/${name}` });
 /**
  * The spec declares no `required` field anywhere: every property is optional, so a response
  * missing `token` would validate. These are the keys the backend was observed to always send
- * (probed on 2026-09-25, every endpoint that returns them). `body` is left off Article on
- * purpose: the backend omits it from list items, so tests of single-article endpoints assert it
- * themselves. tests/api/spec-gaps.spec.ts fails if the spec starts declaring `required`.
+ * (probed on 2026-09-25, and again on the backend commit 8aa617a for ArticleSummary). `body` is
+ * still left off Article. That was because list items omitted it; lists are now ArticleSummary,
+ * so it could be required here, and is left as a deliberate follow-up. tests/api/spec-gaps.spec.ts
+ * fails if the spec starts declaring `required`.
  */
 const person = ['username', 'bio', 'image', 'following'];
 const observedPresence: Record<string, string[]> = {
@@ -42,6 +43,18 @@ const observedPresence: Record<string, string[]> = {
     'description',
     'author',
     'comments',
+    'createdAt',
+    'updatedAt',
+    'favorited',
+    'favoritesCount',
+    'tagList',
+  ],
+  // The list item: no `body` and no `comments`, as probed against 8aa617a.
+  'Conduit.Features.Articles.ArticleSummary': [
+    'slug',
+    'title',
+    'description',
+    'author',
     'createdAt',
     'updatedAt',
     'favorited',
