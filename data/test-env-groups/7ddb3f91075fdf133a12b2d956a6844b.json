@@ -1,0 +1,1 @@
+{"id":"7ddb3f91075fdf133a12b2d956a6844b","fullName":"ui-mocked/auth.spec.ts › sign-in and session (mocked API) › a rejected sign-in shows the server error and keeps the form","name":"a rejected sign-in shows the server error and keeps the form","status":"passed","testResultsByEnv":{"default":"bd7320f84c067e11648d4b75126a929e"}}
