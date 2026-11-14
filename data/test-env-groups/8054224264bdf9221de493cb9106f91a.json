@@ -1,0 +1,1 @@
+{"id":"8054224264bdf9221de493cb9106f91a","fullName":"api/social.spec.ts › favorites › \"favorited\" is true only for the viewer who favorited it, and the count is the total","name":"\"favorited\" is true only for the viewer who favorited it, and the count is the total","status":"passed","testResultsByEnv":{"default":"d1a7bfdb96c2903ed90628188a16d776"}}

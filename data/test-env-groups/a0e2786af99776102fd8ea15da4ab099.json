@@ -1,0 +1,1 @@
+{"id":"a0e2786af99776102fd8ea15da4ab099","fullName":"api/auth.spec.ts › signing in › returns 200, the same user, and a token that works","name":"returns 200, the same user, and a token that works","status":"passed","testResultsByEnv":{"default":"93e52785f8f0a2cff92444b4c7baa3f1"}}
